@@ -24,7 +24,7 @@ const { data: bookings } = useFetch<BookingRecord[]>('/api/bookings', {
 })
 
 const activeCount = computed(() =>
-  (bookings.value ?? []).filter(b => b.status === 'aktif' || b.status === 'menunggu_konfirmasi').length,
+  (bookings.value ?? []).filter(b => b.status === 'aktif').length,
 )
 
 watch(() => route.fullPath, () => {

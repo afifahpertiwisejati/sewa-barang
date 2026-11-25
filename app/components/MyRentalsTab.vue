@@ -3,12 +3,10 @@ import {
   Banknote,
   CalendarRange,
   CheckCircle2,
-  Clock,
   CreditCard,
   ExternalLink,
   IdCard,
   Loader2,
-  Lock,
   MapPin,
   PackageX,
   ReceiptText,
@@ -23,7 +21,6 @@ import {
   DEPOSIT_REFUND_METHODS,
   GUARANTEE_OPTIONS,
   PAYMENT_ACCOUNTS,
-  getTodayWibIso,
   type BookingRecord,
   type BookingStatus,
   type DepositStatus,
@@ -44,46 +41,13 @@ const { isAdmin } = useAuth()
 const { formatRupiah, formatDateRange } = useFormatters()
 const toast = useToast()
 
-type TabFilterKey = 'semua' | BookingStatus | 'due_return' | 'refund_pending'
-
-const statusFilter = ref<TabFilterKey>('semua')
+const statusFilter = ref<'semua' | BookingStatus | 'refund_pending'>('semua')
 const updatingId = ref<string | null>(null)
 const activeModalBooking = ref<BookingRecord | null>(null)
 const activeDepositModalBooking = ref<BookingRecord | null>(null)
 
-function formatShortDate(isoDate: string): string {
-  const date = new Date(`${isoDate}T00:00:00`)
-  if (Number.isNaN(date.getTime())) return isoDate
-  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
-}
-
-function getReturnDueMeta(booking: BookingRecord) {
-  const today = getTodayWibIso()
-  const todayMs = Date.parse(`${today}T00:00:00Z`)
-  const endMs = Date.parse(`${booking.endDate}T00:00:00Z`)
-  const diffDays = Number.isFinite(todayMs) && Number.isFinite(endMs)
-    ? Math.round((todayMs - endMs) / 86_400_000)
-    : 0
-
-  const isDue = today >= booking.endDate
-  const isToday = today === booking.endDate
-  const isOverdue = today > booking.endDate
-
-  return {
-    isDue,
-    isToday,
-    isOverdue,
-    daysOverdue: Math.max(0, diffDays),
-    daysLeft: Math.max(0, -diffDays),
-    shortEndDate: formatShortDate(booking.endDate),
-  }
-}
-
 const filteredBookings = computed(() => {
   if (statusFilter.value === 'semua') return props.bookings
-  if (statusFilter.value === 'due_return') {
-    return props.bookings.filter(b => b.status === 'aktif' && getReturnDueMeta(b).isDue)
-  }
   if (statusFilter.value === 'refund_pending') {
     return props.bookings.filter(
       b => b.status !== 'dibatalkan' && b.deposit > 0 && b.depositStatus === 'menunggu_pengembalian',
@@ -92,16 +56,14 @@ const filteredBookings = computed(() => {
   return props.bookings.filter(b => b.status === statusFilter.value)
 })
 
-const counts = computed<Record<TabFilterKey, number>>(() => ({
+const counts = computed(() => ({
   semua: props.bookings.length,
-  menunggu_konfirmasi: props.bookings.filter(b => b.status === 'menunggu_konfirmasi').length,
   aktif: props.bookings.filter(b => b.status === 'aktif').length,
-  due_return: props.bookings.filter(b => b.status === 'aktif' && getReturnDueMeta(b).isDue).length,
+  selesai: props.bookings.filter(b => b.status === 'selesai').length,
+  dibatalkan: props.bookings.filter(b => b.status === 'dibatalkan').length,
   refund_pending: props.bookings.filter(
     b => b.status !== 'dibatalkan' && b.deposit > 0 && b.depositStatus === 'menunggu_pengembalian',
   ).length,
-  selesai: props.bookings.filter(b => b.status === 'selesai').length,
-  dibatalkan: props.bookings.filter(b => b.status === 'dibatalkan').length,
 }))
 
 async function changeStatus(booking: BookingRecord, newStatus: BookingStatus) {
@@ -115,13 +77,7 @@ async function changeStatus(booking: BookingRecord, newStatus: BookingStatus) {
     await refreshNuxtData('nav-bookings')
     emit('updated')
 
-    if (newStatus === 'aktif') {
-      toast.push('Sewa Diterima!', {
-        description: `Pesanan ${booking.id} sekarang aktif (Sedang Disewa). Tombol Selesaikan Sewa akan aktif pada tanggal pengembalian (${formatShortDate(booking.endDate)}).`,
-        type: 'success',
-      })
-    }
-    else if (newStatus === 'selesai') {
+    if (newStatus === 'selesai') {
       toast.push('Sewa Diselesaikan', {
         description: `Kartu jaminan dikembalikan. Deposit ${formatRupiah(booking.deposit)} kini berstatus Menunggu Pengembalian.`,
         type: 'success',
@@ -134,10 +90,9 @@ async function changeStatus(booking: BookingRecord, newStatus: BookingStatus) {
       })
     }
   }
-  catch (err: unknown) {
-    const fetchErr = err as { data?: { statusMessage?: string }, statusMessage?: string }
+  catch {
     toast.push('Gagal Memperbarui Status', {
-      description: fetchErr?.data?.statusMessage || fetchErr?.statusMessage || 'Terjadi kesalahan saat memperbarui transaksi.',
+      description: 'Terjadi kesalahan saat memperbarui transaksi.',
       type: 'error',
     })
   }
@@ -236,12 +191,6 @@ function getDepositBadge(status: DepositStatus) {
 }
 
 function getStatusBadge(status: BookingStatus) {
-  if (status === 'menunggu_konfirmasi') {
-    return {
-      label: 'Menunggu Diterima',
-      classes: 'bg-amber-600 text-white',
-    }
-  }
   if (status === 'aktif') {
     return {
       label: 'Sedang Disewa',
@@ -310,9 +259,7 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
       <button
         v-for="tab in ([
           { key: 'semua', label: 'Semua' },
-          { key: 'menunggu_konfirmasi', label: 'Perlu Diterima' },
           { key: 'aktif', label: 'Aktif' },
-          { key: 'due_return', label: 'Jatuh Tempo' },
           { key: 'refund_pending', label: 'Menunggu Refund' },
           { key: 'selesai', label: 'Selesai' },
           { key: 'dibatalkan', label: 'Dibatalkan' },
@@ -330,13 +277,7 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
         <span>{{ tab.label }}</span>
         <span
           class="rounded-full px-1.5 py-0.5 text-[10px]"
-          :class="
-            statusFilter === tab.key
-              ? 'bg-white/20 text-white'
-              : (tab.key === 'menunggu_konfirmasi' || tab.key === 'due_return') && counts[tab.key] > 0
-                ? 'bg-amber-100 font-semibold text-amber-800'
-                : 'bg-[#FAF8F5] text-[#6B655E]'
-          "
+          :class="statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-[#FAF8F5] text-[#6B655E]'"
         >
           {{ counts[tab.key] }}
         </span>
@@ -405,28 +346,6 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
                   :class="getStatusBadge(booking.status).classes"
                 >
                   {{ getStatusBadge(booking.status).label }}
-                </span>
-                <!-- Return Due-Date Status Pill for Active Bookings -->
-                <span
-                  v-if="booking.status === 'aktif' && getReturnDueMeta(booking).isOverdue"
-                  class="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-0.5 text-[10px] font-semibold text-rose-700"
-                >
-                  <Clock class="h-3 w-3" />
-                  Jatuh Tempo (Lewat {{ getReturnDueMeta(booking).daysOverdue }} hr)
-                </span>
-                <span
-                  v-else-if="booking.status === 'aktif' && getReturnDueMeta(booking).isToday"
-                  class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-semibold text-amber-800"
-                >
-                  <Clock class="h-3 w-3" />
-                  Hari Ini Tanggal Pengembalian
-                </span>
-                <span
-                  v-else-if="booking.status === 'aktif'"
-                  class="inline-flex items-center gap-1 rounded-full bg-[#F3EFE9] px-2.5 py-0.5 text-[10px] font-medium text-[#6B655E]"
-                >
-                  <Clock class="h-3 w-3" />
-                  Kembali {{ getReturnDueMeta(booking).shortEndDate }} ({{ getReturnDueMeta(booking).daysLeft }} hr lagi)
                 </span>
                 <span
                   class="rounded-full px-2.5 py-0.5 text-[10px] font-medium"
@@ -537,9 +456,9 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
 
               <!-- Payment Transaction & Guarantee Action Strip -->
               <div class="mt-3 flex flex-wrap items-center gap-2">
-                <!-- Pay Now button for unpaid booking -->
+                <!-- Pay Now button for unpaid active booking -->
                 <button
-                  v-if="(booking.status === 'aktif' || booking.status === 'menunggu_konfirmasi') && booking.paymentStatus === 'belum_bayar'"
+                  v-if="booking.status === 'aktif' && booking.paymentStatus === 'belum_bayar'"
                   type="button"
                   class="inline-flex items-center gap-1.5 rounded-md bg-[#2B2A28] px-3.5 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-[#3F3D39]"
                   @click="activeModalBooking = booking"
@@ -561,7 +480,7 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
 
                 <!-- Admin confirm Cash received -->
                 <button
-                  v-if="isAdmin && (booking.status === 'aktif' || booking.status === 'menunggu_konfirmasi') && booking.paymentMethod === 'cash' && booking.paymentStatus === 'bayar_ditempat'"
+                  v-if="isAdmin && booking.status === 'aktif' && booking.paymentMethod === 'cash' && booking.paymentStatus === 'bayar_ditempat'"
                   type="button"
                   :disabled="updatingId === booking.id"
                   class="inline-flex items-center gap-1 rounded-md bg-[#556256] px-3 py-1.5 text-[11px] font-medium text-white hover:bg-[#455146] disabled:opacity-60"
@@ -573,7 +492,7 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
 
                 <!-- Admin guarantee handover controls -->
                 <button
-                  v-if="isAdmin && (booking.status === 'aktif' || booking.status === 'menunggu_konfirmasi') && (booking.guaranteeStatus || 'menunggu_serah') === 'menunggu_serah'"
+                  v-if="isAdmin && booking.status === 'aktif' && (booking.guaranteeStatus || 'menunggu_serah') === 'menunggu_serah'"
                   type="button"
                   :disabled="updatingId === booking.id"
                   class="inline-flex items-center gap-1 rounded-md border border-[#C7D1C5] bg-[#F3F5F2] px-3 py-1.5 text-[11px] font-medium text-[#384239] hover:bg-[#E3E8E2] disabled:opacity-60"
@@ -595,7 +514,7 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
 
                 <!-- Deposit Refund Trigger (Renter Request / Admin Process / Receipt) -->
                 <button
-                  v-if="booking.deposit > 0 && booking.status !== 'dibatalkan' && booking.status !== 'menunggu_konfirmasi'"
+                  v-if="booking.deposit > 0 && booking.status !== 'dibatalkan'"
                   type="button"
                   class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-colors"
                   :class="
@@ -647,117 +566,28 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
               </div>
             </div>
 
-            <!-- Action Buttons: Step 1 -> Waiting for Admin to Accept ("Terima Sewa") -->
-            <div v-if="booking.status === 'menunggu_konfirmasi'" class="space-y-2">
-              <template v-if="isAdmin">
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    :disabled="updatingId === booking.id"
-                    class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#556256] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[#455146] disabled:opacity-60"
-                    @click="changeStatus(booking, 'aktif')"
-                  >
-                    <Loader2 v-if="updatingId === booking.id" class="h-3.5 w-3.5 animate-spin" />
-                    <CheckCircle2 v-else class="h-3.5 w-3.5" />
-                    Terima Sewa
-                  </button>
-                  <button
-                    type="button"
-                    :disabled="updatingId === booking.id"
-                    class="inline-flex items-center justify-center gap-1 rounded-md border border-[#E8D0CB] bg-[#FAF4F1] px-3 py-2 text-xs font-medium text-[#9E5245] transition-colors hover:bg-[#F3E2DD] disabled:opacity-60"
-                    @click="changeStatus(booking, 'dibatalkan')"
-                  >
-                    <XCircle class="h-3.5 w-3.5" />
-                    Tolak
-                  </button>
-                </div>
-                <p class="text-[10.5px] leading-snug text-[#8A837A]">
-                  Klik <strong>Terima Sewa</strong> untuk mengonfirmasi pesanan penyewa.
-                </p>
-              </template>
-              <template v-else>
-                <p class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-center text-[11px] font-medium text-amber-800">
-                  Menunggu konfirmasi Terima Sewa dari Admin Butik
-                </p>
-                <button
-                  type="button"
-                  :disabled="updatingId === booking.id"
-                  class="inline-flex w-full items-center justify-center gap-1 rounded-md border border-[#E8D0CB] bg-[#FAF4F1] px-3 py-1.5 text-xs font-medium text-[#9E5245] transition-colors hover:bg-[#F3E2DD] disabled:opacity-60"
-                  @click="changeStatus(booking, 'dibatalkan')"
-                >
-                  <XCircle class="h-3.5 w-3.5" />
-                  Batalkan Pesanan
-                </button>
-              </template>
+            <!-- Action Buttons -->
+            <div v-if="booking.status === 'aktif'" class="flex gap-2">
+              <button
+                type="button"
+                :disabled="updatingId === booking.id"
+                class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#556256] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[#455146] disabled:opacity-60"
+                @click="changeStatus(booking, 'selesai')"
+              >
+                <Loader2 v-if="updatingId === booking.id" class="h-3.5 w-3.5 animate-spin" />
+                <CheckCircle2 v-else class="h-3.5 w-3.5" />
+                Selesaikan Sewa
+              </button>
+              <button
+                type="button"
+                :disabled="updatingId === booking.id"
+                class="inline-flex items-center justify-center gap-1 rounded-md border border-[#E8D0CB] bg-[#FAF4F1] px-3 py-2 text-xs font-medium text-[#9E5245] transition-colors hover:bg-[#F3E2DD] disabled:opacity-60"
+                @click="changeStatus(booking, 'dibatalkan')"
+              >
+                <XCircle class="h-3.5 w-3.5" />
+                Batalkan
+              </button>
             </div>
-
-            <!-- Action Buttons: Step 2 -> Active Rental (Completable ONLY on/after return due date) -->
-            <div v-else-if="booking.status === 'aktif'" class="space-y-2">
-              <template v-if="isAdmin">
-                <div class="flex gap-2">
-                  <button
-                    v-if="getReturnDueMeta(booking).isDue"
-                    type="button"
-                    :disabled="updatingId === booking.id"
-                    class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#556256] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[#455146] disabled:opacity-60"
-                    @click="changeStatus(booking, 'selesai')"
-                  >
-                    <Loader2 v-if="updatingId === booking.id" class="h-3.5 w-3.5 animate-spin" />
-                    <CheckCircle2 v-else class="h-3.5 w-3.5" />
-                    Selesaikan Sewa
-                  </button>
-                  <button
-                    v-else
-                    type="button"
-                    disabled
-                    :title="`Selesaikan Sewa baru aktif pada tanggal pengembalian (${booking.endDate})`"
-                    class="inline-flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-md border border-[#E0DBD3] bg-[#F3F0EB] px-3 py-2 text-[11px] font-medium text-[#8A837A]"
-                  >
-                    <Lock class="h-3.5 w-3.5" />
-                    Selesai ({{ getReturnDueMeta(booking).shortEndDate }})
-                  </button>
-                  <button
-                    type="button"
-                    :disabled="updatingId === booking.id"
-                    class="inline-flex items-center justify-center gap-1 rounded-md border border-[#E8D0CB] bg-[#FAF4F1] px-3 py-2 text-xs font-medium text-[#9E5245] transition-colors hover:bg-[#F3E2DD] disabled:opacity-60"
-                    @click="changeStatus(booking, 'dibatalkan')"
-                  >
-                    <XCircle class="h-3.5 w-3.5" />
-                    Batalkan
-                  </button>
-                </div>
-                <p
-                  v-if="!getReturnDueMeta(booking).isDue"
-                  class="text-[10.5px] leading-snug text-[#8A837A]"
-                >
-                  Tombol <strong>Selesaikan Sewa</strong> aktif otomatis mulai tanggal pengembalian ({{ getReturnDueMeta(booking).shortEndDate }}).
-                </p>
-                <p
-                  v-else
-                  class="text-[10.5px] font-medium leading-snug"
-                  :class="getReturnDueMeta(booking).isOverdue ? 'text-rose-700' : 'text-amber-800'"
-                >
-                  {{ getReturnDueMeta(booking).isOverdue
-                    ? `Sudah jatuh tempo (${getReturnDueMeta(booking).daysOverdue} hari) — silakan cek busana & selesaikan sewa.`
-                    : 'Hari ini tanggal pengembalian — silakan cek busana & selesaikan sewa.' }}
-                </p>
-              </template>
-              <template v-else>
-                <p
-                  class="rounded-lg px-3 py-2 text-center text-[11px] font-medium"
-                  :class="
-                    getReturnDueMeta(booking).isDue
-                      ? 'border border-amber-200 bg-amber-50 text-amber-800'
-                      : 'bg-[#F3F5F2] text-[#556256]'
-                  "
-                >
-                  {{ getReturnDueMeta(booking).isDue
-                    ? 'Tanggal pengembalian telah tiba. Kembalikan busana agar Admin menyelesaikan sewa.'
-                    : `Sewa diterima & aktif • Kembali ${getReturnDueMeta(booking).shortEndDate}` }}
-                </p>
-              </template>
-            </div>
-
             <div
               v-else-if="booking.status === 'selesai'"
               class="space-y-1.5"

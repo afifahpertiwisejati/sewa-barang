@@ -30,7 +30,7 @@ const {
 
 const stats = computed(() => {
   const list = bookings.value ?? []
-  const active = list.filter(b => b.status === 'aktif' || b.status === 'menunggu_konfirmasi')
+  const active = list.filter(b => b.status === 'aktif')
   const completed = list.filter(b => b.status === 'selesai')
   const heldDeposit = list
     .filter(b => b.status !== 'dibatalkan' && b.depositStatus !== 'dikembalikan' && b.depositStatus !== 'dipotong')

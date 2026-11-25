@@ -1,11 +1,10 @@
-import {
-  getTodayWibIso,
-  type BookingRecord,
-  type BookingStatus,
-  type GuaranteeStatus,
-  type GuaranteeType,
-  type PaymentMethod,
-  type PaymentStatus,
+import type {
+  BookingRecord,
+  BookingStatus,
+  GuaranteeStatus,
+  GuaranteeType,
+  PaymentMethod,
+  PaymentStatus,
 } from '#shared/types/rental'
 import { requireAuthUser } from '../../utils/auth'
 import { createNotification, findBookingById, updateBooking } from '../../utils/db'
@@ -42,46 +41,12 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
   const prevPaymentStatus = booking.paymentStatus
   const prevGuaranteeStatus = booking.guaranteeStatus
 
-  // Update rental status (menunggu_konfirmasi / aktif / selesai / dibatalkan)
+  // Update rental status (aktif / selesai / dibatalkan)
   if (body?.status !== undefined) {
-    const allowedStatuses: BookingStatus[] = ['menunggu_konfirmasi', 'aktif', 'selesai', 'dibatalkan']
+    const allowedStatuses: BookingStatus[] = ['aktif', 'selesai', 'dibatalkan']
     if (!allowedStatuses.includes(body.status)) {
       throw createError({ statusCode: 400, statusMessage: 'Status penyewaan tidak valid.' })
     }
-
-    // Terima Sewa: Admin only
-    if (body.status === 'aktif' && prevStatus === 'menunggu_konfirmasi') {
-      if (user.role !== 'admin') {
-        throw createError({
-          statusCode: 403,
-          statusMessage: 'Hanya Admin Butik yang dapat menerima pesanan sewa.',
-        })
-      }
-    }
-
-    // Selesaikan Sewa: Admin only & only on/after return due date (endDate)
-    if (body.status === 'selesai') {
-      if (user.role !== 'admin') {
-        throw createError({
-          statusCode: 403,
-          statusMessage: 'Hanya Admin Butik yang dapat menyelesaikan penyewaan.',
-        })
-      }
-      if (prevStatus === 'menunggu_konfirmasi') {
-        throw createError({
-          statusCode: 400,
-          statusMessage: 'Terima pesanan sewa terlebih dahulu sebelum menyelesaikannya.',
-        })
-      }
-      const todayWib = getTodayWibIso()
-      if (todayWib < booking.endDate) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: `Sewa belum jatuh tempo. Baru dapat diselesaikan mulai tanggal pengembalian (${booking.endDate}).`,
-        })
-      }
-    }
-
     booking.status = body.status
     if (body.status === 'selesai') {
       booking.guaranteeStatus = 'dikembalikan'
@@ -163,20 +128,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
 
   // Status transitions
   if (booking.status !== prevStatus) {
-    if (booking.status === 'aktif' && prevStatus === 'menunggu_konfirmasi' && booking.userId) {
-      notifTasks.push(
-        createNotification({
-          userId: booking.userId,
-          recipientRole: 'user',
-          type: 'booking_new',
-          title: 'Pesanan Sewa Diterima Admin',
-          message: `Pesanan ${booking.itemName} (${booking.id}) telah diterima Admin Butik untuk tanggal ${booking.startDate} s/d ${booking.endDate}.`,
-          bookingId: booking.id,
-          actionUrl: '/dashboard',
-        }),
-      )
-    }
-    else if (booking.status === 'selesai') {
+    if (booking.status === 'selesai') {
       if (user.role === 'admin' && booking.userId) {
         notifTasks.push(
           createNotification({

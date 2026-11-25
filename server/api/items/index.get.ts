@@ -60,7 +60,7 @@ export default defineEventHandler(async (event): Promise<ItemsListResponse> => {
       const hasConflict = activeBookings.some(
         b =>
           b.itemId === item.id
-          && (b.status === 'aktif' || b.status === 'menunggu_konfirmasi')
+          && b.status === 'aktif'
           && datesOverlap(startDate, endDate, b.startDate, b.endDate),
       )
       return !hasConflict

@@ -14,16 +14,7 @@ export type RentalCategory = (typeof RENTAL_CATEGORIES)[number]
 export type CategoryFilter = 'Semua' | RentalCategory
 export type ItemStatus = 'Tersedia' | 'Sedang Disewa'
 export type DeliveryOption = 'ambil_sendiri' | 'kurir_antar'
-export type BookingStatus = 'menunggu_konfirmasi' | 'aktif' | 'selesai' | 'dibatalkan'
-
-/**
- * Returns today's ISO date (YYYY-MM-DD) in Western Indonesian Time (WIB / UTC+7)
- * so return due-date checks stay accurate on UTC serverless runtimes like Vercel.
- */
-export function getTodayWibIso(): string {
-  const wibMs = Date.now() + 7 * 60 * 60 * 1000
-  return new Date(wibMs).toISOString().slice(0, 10)
-}
+export type BookingStatus = 'aktif' | 'selesai' | 'dibatalkan'
 export type PaymentMethod = 'cash' | 'transfer_bca' | 'transfer_mandiri' | 'qris' | 'gopay'
 export type PaymentStatus = 'belum_bayar' | 'bayar_ditempat' | 'terverifikasi'
 export type GuaranteeType = 'ktp' | 'sim' | 'ktm' | 'kk_paspor'

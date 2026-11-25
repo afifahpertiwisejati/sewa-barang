@@ -11,7 +11,6 @@ import {
 } from 'lucide-vue-next'
 import {
   DEPOSIT_REFUND_METHODS,
-  getTodayWibIso,
   type BookingRecord,
   type DepositRefundMethod,
 } from '#shared/types/rental'
@@ -55,7 +54,7 @@ watch(
     conditionType.value = (b.depositDeduction ?? 0) > 0 ? 'potongan' : 'utuh'
     deductionAmount.value = b.depositDeduction ?? 0
     refundNote.value = b.depositRefundNote || ''
-    completeRental.value = b.status === 'aktif' && getTodayWibIso() >= b.endDate
+    completeRental.value = b.status === 'aktif'
   },
   { immediate: true },
 )
@@ -409,10 +408,7 @@ async function handleSubmit(action: 'request' | 'process') {
                   </div>
                 </div>
 
-                <label
-                  v-if="props.booking.status === 'aktif' && getTodayWibIso() >= props.booking.endDate"
-                  class="flex cursor-pointer items-center gap-2 text-xs text-[#2B2A28]"
-                >
+                <label v-if="props.booking.status === 'aktif'" class="flex cursor-pointer items-center gap-2 text-xs text-[#2B2A28]">
                   <input v-model="completeRental" type="checkbox" class="accent-[#556256]">
                   <span>Sekaligus tandai sewa <strong>Selesai</strong> &amp; kartu jaminan dikembalikan</span>
                 </label>

@@ -1,6 +1,5 @@
 import {
   DEPOSIT_REFUND_METHODS,
-  getTodayWibIso,
   type BookingRecord,
   type DepositRefundMethod,
 } from '#shared/types/rental'
@@ -146,7 +145,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
       ? `Deposit dikembalikan setelah potongan sebesar Rp${deduction.toLocaleString('id-ID')}.`
       : 'Busana kembali dalam kondisi bersih & utuh. Deposit dikembalikan 100%.')
 
-  if (body?.completeRental !== false && booking.status === 'aktif' && getTodayWibIso() >= booking.endDate) {
+  if (body?.completeRental !== false && booking.status === 'aktif') {
     booking.status = 'selesai'
     booking.guaranteeStatus = 'dikembalikan'
   }
