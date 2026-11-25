@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import type { CategoryFilter } from '#shared/types/rental'
 
+const props = defineProps<{
+  counts?: Record<string, number>
+}>()
+
+const emit = defineEmits<{
+  select: [category: CategoryFilter]
+}>()
+
 const { filters } = useCatalogFilters()
 
 const categories: {
@@ -11,7 +19,7 @@ const categories: {
 }[] = [
   {
     label: 'Semua',
-    shortLabel: 'Semua',
+    shortLabel: 'Semua Etalase',
     image: '/images/dress-sage-brokat.jpg',
     bgClass: 'bg-[#E5DDD5]',
   },
@@ -23,7 +31,7 @@ const categories: {
   },
   {
     label: 'Gaun Pesta',
-    shortLabel: 'Dress Modern',
+    shortLabel: 'Gaun Pesta',
     image: '/images/dress-maroon-ribbon.jpg',
     bgClass: 'bg-[#D7DDD5]',
   },
@@ -46,16 +54,21 @@ const categories: {
     bgClass: 'bg-[#DFD7CC]',
   },
 ]
+
+function handleSelect(cat: CategoryFilter) {
+  filters.value.category = cat
+  emit('select', cat)
+}
 </script>
 
 <template>
-  <div class="no-scrollbar flex items-start gap-5 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:gap-6 md:grid-cols-6">
+  <div class="no-scrollbar flex items-start gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:gap-6 md:grid-cols-6">
     <button
       v-for="cat in categories"
       :key="cat.label"
       type="button"
-      class="group flex shrink-0 flex-col items-center text-center focus:outline-none"
-      @click="filters.category = cat.label"
+      class="group flex w-24 shrink-0 flex-col items-center text-center focus:outline-none sm:w-auto"
+      @click="handleSelect(cat.label)"
     >
       <div
         class="relative h-20 w-20 overflow-hidden rounded-full p-1 transition-all duration-300 sm:h-24 sm:w-24"
@@ -82,6 +95,12 @@ const categories: {
         "
       >
         {{ cat.shortLabel }}
+      </span>
+      <span
+        v-if="props.counts && props.counts[cat.label] !== undefined"
+        class="mt-0.5 text-[10.5px] text-[#8A837A]"
+      >
+        {{ props.counts[cat.label] }} koleksi
       </span>
     </button>
   </div>

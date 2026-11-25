@@ -16,9 +16,11 @@ import {
 } from 'lucide-vue-next'
 import {
   AVAILABLE_SIZES,
+  RENTAL_CATEGORIES,
   SHOE_SIZES_MEN,
   SHOE_SIZES_WOMEN,
   type BookingRecord,
+  type CategoryFilter,
   type ItemsListResponse,
   type RentalItem,
 } from '#shared/types/rental'
@@ -49,6 +51,7 @@ const initialTab: AdminTab
 
 const activeTab = ref<AdminTab>(initialTab)
 const catalogSearch = ref('')
+const catalogCategoryFilter = ref<CategoryFilter>('Semua')
 const editingItemId = ref<string | null>(null)
 const editForm = reactive({
   name: '',
@@ -93,15 +96,36 @@ const {
   refresh: refreshCatalog,
 } = await useFetch<ItemsListResponse>('/api/items')
 
+const adminCategoryCounts = computed<Record<string, number>>(() => {
+  const list = catalogData.value?.items ?? []
+  const counts: Record<string, number> = { Semua: list.length }
+  for (const cat of RENTAL_CATEGORIES) {
+    counts[cat] = list.filter(i => i.category === cat).length
+  }
+  return counts
+})
+
 const catalogItems = computed(() => {
   const list = catalogData.value?.items ?? []
   const q = catalogSearch.value.trim().toLowerCase()
-  if (!q) return list
-  return list.filter(item =>
-    item.name.toLowerCase().includes(q)
-    || item.category.toLowerCase().includes(q)
-    || item.location.toLowerCase().includes(q),
-  )
+  const catFilter = catalogCategoryFilter.value
+
+  const filtered = list.filter((item) => {
+    if (catFilter !== 'Semua' && item.category !== catFilter) return false
+    if (!q) return true
+    return (
+      item.name.toLowerCase().includes(q)
+      || item.category.toLowerCase().includes(q)
+      || item.location.toLowerCase().includes(q)
+    )
+  })
+
+  // Keep products neatly grouped by etalase order, then newest first within each category
+  return [...filtered].sort((a, b) => {
+    const catDiff = RENTAL_CATEGORIES.indexOf(a.category) - RENTAL_CATEGORIES.indexOf(b.category)
+    if (catDiff !== 0) return catDiff
+    return b.createdAt.localeCompare(a.createdAt)
+  })
 })
 
 const stats = computed(() => {
@@ -427,6 +451,30 @@ async function handleItemCreated() {
 
     <!-- Tab 2: Manage Catalog CRUD -->
     <div v-else-if="activeTab === 'catalog'" class="mt-6 space-y-4">
+      <!-- Quick Etalase Filter Pills -->
+      <div class="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
+        <button
+          v-for="cat in (['Semua', ...RENTAL_CATEGORIES] as CategoryFilter[])"
+          :key="cat"
+          type="button"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
+          :class="
+            catalogCategoryFilter === cat
+              ? 'border-[#2B2A28] bg-[#2B2A28] text-white'
+              : 'border-[#E8E3DC] bg-white text-[#6B655E] hover:border-[#556256] hover:text-[#2B2A28]'
+          "
+          @click="catalogCategoryFilter = cat"
+        >
+          <span>{{ cat === 'Semua' ? 'Semua Etalase' : cat }}</span>
+          <span
+            class="rounded-full px-1.5 py-0.5 text-[10px]"
+            :class="catalogCategoryFilter === cat ? 'bg-white/20 text-white' : 'bg-[#F3EFE9] text-[#6B655E]'"
+          >
+            {{ adminCategoryCounts[cat] ?? 0 }}
+          </span>
+        </button>
+      </div>
+
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="relative w-full max-w-sm">
           <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A837A]" />

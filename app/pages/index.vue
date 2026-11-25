@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ArrowRight, PackageSearch, RotateCcw, SlidersHorizontal, X } from 'lucide-vue-next'
-import type { ItemsListResponse } from '#shared/types/rental'
+import {
+  RENTAL_CATEGORIES,
+  type CategoryFilter,
+  type ItemsListResponse,
+  type RentalCategory,
+  type RentalItem,
+} from '#shared/types/rental'
 import { DEFAULT_MAX_PRICE } from '../composables/useCatalogFilters'
 
 useHead({
@@ -37,14 +43,71 @@ const { data: newestData, refresh: refreshNewest } = await useFetch<ItemsListRes
 })
 
 const items = computed(() => data.value?.items ?? [])
-const newestItems = computed(() => (newestData.value?.items ?? []).slice(0, 4))
+const allCatalogItems = computed(() => newestData.value?.items ?? items.value)
+const newestItems = computed(() => allCatalogItems.value.slice(0, 4))
 const cities = computed(() => data.value?.availableCities ?? [])
 const maxCatalogPrice = computed(() => data.value?.maxCatalogPrice ?? DEFAULT_MAX_PRICE)
+
+const categoryCounts = computed<Record<string, number>>(() => {
+  const list = allCatalogItems.value
+  const counts: Record<string, number> = { Semua: list.length }
+  for (const cat of RENTAL_CATEGORIES) {
+    counts[cat] = list.filter(i => i.category === cat).length
+  }
+  return counts
+})
+
+const etalaseMeta: Record<RentalCategory, { title: string, subtitle: string }> = {
+  'Kebaya Wisuda': {
+    title: 'Etalase Kebaya Wisuda & Lamaran',
+    subtitle: 'Kebaya payet modern, kutubaru, dan kurung Melayu siap pakai',
+  },
+  'Gaun Pesta': {
+    title: 'Etalase Gaun Pesta & Dress Modern',
+    subtitle: 'Koleksi dress bridesmaid, kondangan, dan gaun malam elegan',
+  },
+  'Jas Pria': {
+    title: 'Etalase Jas Pria Formal',
+    subtitle: 'Setelan jas slim-fit, tuxedo, dan jas wisuda pria rapi',
+  },
+  'High Heels': {
+    title: 'Etalase High Heels',
+    subtitle: 'Sepatu hak pesta & wisuda nyaman dalam berbagai ukuran',
+  },
+  'Sepatu Pantofel': {
+    title: 'Etalase Sepatu Pantofel Pria',
+    subtitle: 'Pantofel kulit formal serasi untuk setelan jas & acara resmi',
+  },
+}
+
+const groupedByEtalase = computed(() => {
+  const list = items.value
+  return RENTAL_CATEGORIES
+    .map((category) => {
+      const groupItems = list.filter(item => item.category === category)
+      return {
+        category,
+        title: etalaseMeta[category].title,
+        subtitle: etalaseMeta[category].subtitle,
+        items: groupItems,
+      }
+    })
+    .filter(group => group.items.length > 0)
+})
+
+const showGroupedEtalase = computed(() => filters.value.category === 'Semua')
+
+const quickTabs: CategoryFilter[] = ['Semua', ...RENTAL_CATEGORIES]
 
 function scrollToCatalog() {
   if (import.meta.client) {
     document.getElementById('katalog')?.scrollIntoView({ behavior: 'smooth' })
   }
+}
+
+function selectEtalase(category: CategoryFilter) {
+  filters.value.category = category
+  scrollToCatalog()
 }
 
 function selectPromoCategory(category: 'Kebaya Wisuda' | 'Gaun Pesta') {
@@ -67,7 +130,7 @@ onMounted(() => {
     <section class="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
       <div class="mb-6 flex items-baseline justify-between">
         <h2 class="font-serif text-2xl font-normal tracking-tight text-[#2B2A28] sm:text-[28px]">
-          Jelajahi Kategori
+          Jelajahi Etalase
         </h2>
         <button
           type="button"
@@ -79,18 +142,18 @@ onMounted(() => {
         </button>
       </div>
 
-      <CategoryPills />
+      <CategoryPills :counts="categoryCounts" @select="scrollToCatalog" />
     </section>
 
     <!-- Section 2: Main Catalog with Sidebar Filter -->
     <section id="katalog" class="mx-auto max-w-7xl px-4 pt-14 sm:px-6 lg:px-8">
-      <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+      <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 class="font-serif text-2xl font-normal tracking-tight text-[#2B2A28] sm:text-[28px]">
-            {{ filters.category === 'Semua' ? 'Koleksi Terpopuler' : filters.category }}
+            {{ filters.category === 'Semua' ? 'Etalase Koleksi Butik' : etalaseMeta[filters.category].title }}
           </h2>
           <p class="mt-1 text-xs text-[#8A837A]">
-            {{ items.length }} koleksi kebaya, dress sopan, jas pria, high heels &amp; sepatu formal siap pakai
+            {{ items.length }} koleksi tersusun rapi per kategori — siap pakai &amp; sudah termasuk dry-clean
           </p>
         </div>
 
@@ -116,6 +179,30 @@ onMounted(() => {
         </div>
       </div>
 
+      <!-- Quick Etalase Switcher Pills -->
+      <div class="no-scrollbar mb-6 flex items-center gap-2 overflow-x-auto pb-1">
+        <button
+          v-for="tab in quickTabs"
+          :key="tab"
+          type="button"
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors"
+          :class="
+            filters.category === tab
+              ? 'border-[#2B2A28] bg-[#2B2A28] text-white'
+              : 'border-[#E5DFD6] bg-white text-[#5C554E] hover:border-[#556256] hover:text-[#2B2A28]'
+          "
+          @click="filters.category = tab"
+        >
+          <span>{{ tab === 'Semua' ? 'Semua Etalase' : tab }}</span>
+          <span
+            class="rounded-full px-1.5 py-0.5 text-[10px]"
+            :class="filters.category === tab ? 'bg-white/20 text-white' : 'bg-[#F3EFE9] text-[#6B655E]'"
+          >
+            {{ categoryCounts[tab] ?? 0 }}
+          </span>
+        </button>
+      </div>
+
       <!-- Mobile Filter Drawer -->
       <div v-if="showMobileFilter" class="mb-6 lg:hidden">
         <FilterSidebar
@@ -137,10 +224,10 @@ onMounted(() => {
           <!-- Loading -->
           <div
             v-if="pending && items.length === 0"
-            class="grid grid-cols-2 gap-5 sm:grid-cols-3"
+            class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5"
           >
-            <div v-for="n in 6" :key="n" class="space-y-3">
-              <div class="aspect-[3/3.7] animate-pulse rounded-xl bg-[#EFECE7]" />
+            <div v-for="n in 6" :key="n" class="rounded-2xl border border-[#ECE7DF] bg-white p-3 space-y-3">
+              <div class="aspect-[3/4] animate-pulse rounded-xl bg-[#EFECE7]" />
               <div class="h-4 w-3/4 animate-pulse rounded bg-[#EFECE7]" />
               <div class="h-3 w-1/2 animate-pulse rounded bg-[#EFECE7]" />
             </div>
@@ -158,7 +245,7 @@ onMounted(() => {
               Busana tidak ditemukan
             </h3>
             <p class="mt-1 max-w-sm text-xs leading-relaxed text-[#8A837A]">
-              Tidak ada kebaya atau dress yang cocok dengan kombinasi filter, lokasi, atau tanggal yang dipilih.
+              Tidak ada kebaya, gaun, jas, atau sepatu yang cocok dengan kombinasi filter, lokasi, atau tanggal yang dipilih.
             </p>
             <button
               type="button"
@@ -170,10 +257,54 @@ onMounted(() => {
             </button>
           </div>
 
-          <!-- Cards Grid -->
+          <!-- Grouped Etalase View (when viewing "Semua Etalase") -->
+          <div v-else-if="showGroupedEtalase" class="space-y-10">
+            <div
+              v-for="group in groupedByEtalase"
+              :key="group.category"
+              class="space-y-4"
+            >
+              <!-- Etalase Section Header -->
+              <div class="flex flex-wrap items-end justify-between gap-2 border-b border-[#E8E3DC] pb-3">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-serif text-xl font-normal text-[#2B2A28] sm:text-2xl">
+                      {{ group.title }}
+                    </h3>
+                    <span class="rounded-full bg-[#EFECE7] px-2.5 py-0.5 text-[11px] font-medium text-[#556256]">
+                      {{ group.items.length }} koleksi
+                    </span>
+                  </div>
+                  <p class="mt-0.5 text-xs text-[#8A837A]">
+                    {{ group.subtitle }}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 text-xs font-medium text-[#556256] transition-colors hover:text-[#2B2A28]"
+                  @click="selectEtalase(group.category)"
+                >
+                  Lihat Etalase
+                  <ArrowRight class="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <!-- Uniform 2/3-Column Etalase Grid -->
+              <div class="grid grid-cols-2 items-stretch gap-3.5 sm:grid-cols-3 sm:gap-5">
+                <ItemCard
+                  v-for="item in group.items"
+                  :key="item.id"
+                  :item="item"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Focused Single-Etalase Grid -->
           <div
             v-else
-            class="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 sm:gap-x-6 sm:gap-y-8"
+            class="grid grid-cols-2 items-stretch gap-3.5 sm:grid-cols-3 sm:gap-5"
           >
             <ItemCard
               v-for="item in items"
@@ -264,7 +395,7 @@ onMounted(() => {
         </button>
       </div>
 
-      <div class="grid grid-cols-2 gap-x-4 gap-y-7 md:grid-cols-4 md:gap-x-6">
+      <div class="grid grid-cols-2 items-stretch gap-3.5 md:grid-cols-4 md:gap-5">
         <ItemCard
           v-for="item in newestItems"
           :key="`new-${item.id}`"
