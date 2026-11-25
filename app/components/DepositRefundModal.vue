@@ -33,14 +33,95 @@ const methods = Object.entries(DEPOSIT_REFUND_METHODS) as [
   { label: string, placeholder: string, isCash?: boolean },
 ][]
 
+interface DeductionPreset {
+  id: string
+  label: string
+  detail: string
+  amount: number
+}
+
+const DEDUCTION_PRESETS: DeductionPreset[] = [
+  {
+    id: 'sobek',
+    label: 'Sobek / Jahitan Lepas',
+    detail: 'Perbaikan jahitan atau sobek ringan',
+    amount: 10000,
+  },
+  {
+    id: 'telat',
+    label: 'Telat Pengembalian',
+    detail: 'Denda keterlambatan pengembalian',
+    amount: 15000,
+  },
+  {
+    id: 'payet_rusak',
+    label: 'Payet / Kancing / Resleting Rusak',
+    detail: 'Penggantian payet, kancing, atau resleting',
+    amount: 15000,
+  },
+  {
+    id: 'noda_permanen',
+    label: 'Noda Tidak Bisa Hilang',
+    detail: 'Noda tinta, make-up, atau makanan membandel',
+    amount: 20000,
+  },
+  {
+    id: 'aksesoris_hilang',
+    label: 'Aksesoris Hilang',
+    detail: 'Selendang, bros, sabuk, dasi, atau garment bag',
+    amount: 25000,
+  },
+  {
+    id: 'rusak_berat',
+    label: 'Kerusakan Berat',
+    detail: 'Sobek besar, terbakar, atau tidak layak pakai',
+    amount: 50000,
+  },
+]
+
 const selectedMethod = ref<DepositRefundMethod>('transfer_bca')
 const refundAccount = ref('')
 const conditionType = ref<'utuh' | 'potongan'>('utuh')
+const selectedDeductionIds = ref<string[]>([])
 const deductionAmount = ref(0)
 const refundNote = ref('')
 const completeRental = ref(true)
 const submitting = ref(false)
 const errorMsg = ref('')
+
+function syncDeductionFromPresets() {
+  if (!props.booking) return
+  const chosen = DEDUCTION_PRESETS.filter(p => selectedDeductionIds.value.includes(p.id))
+  const total = chosen.reduce((sum, p) => sum + p.amount, 0)
+  deductionAmount.value = Math.min(props.booking.deposit, total)
+  if (chosen.length > 0) {
+    refundNote.value = `Potongan deposit: ${chosen.map(p => `${p.label} (${formatRupiah(p.amount)})`).join(', ')}`
+  }
+  else {
+    refundNote.value = ''
+  }
+}
+
+function toggleDeductionPreset(presetId: string) {
+  conditionType.value = 'potongan'
+  const idx = selectedDeductionIds.value.indexOf(presetId)
+  if (idx >= 0) {
+    selectedDeductionIds.value.splice(idx, 1)
+  }
+  else {
+    selectedDeductionIds.value.push(presetId)
+  }
+  syncDeductionFromPresets()
+}
+
+function selectConditionUtuh() {
+  conditionType.value = 'utuh'
+  selectedDeductionIds.value = []
+  deductionAmount.value = 0
+  if (refundNote.value.startsWith('Potongan deposit:')) {
+    refundNote.value = ''
+  }
+}
 
 watch(
   () => props.booking,
@@ -52,6 +133,7 @@ watch(
       ? b.depositRefundAccount
       : ''
     conditionType.value = (b.depositDeduction ?? 0) > 0 ? 'potongan' : 'utuh'
+    selectedDeductionIds.value = []
     deductionAmount.value = b.depositDeduction ?? 0
     refundNote.value = b.depositRefundNote || ''
     completeRental.value = b.status === 'aktif'
@@ -357,7 +439,7 @@ async function handleSubmit(action: 'request' | 'process') {
                         ? 'border-[#556256] bg-[#F3F5F2] text-[#2B2A28]'
                         : 'border-[#E8E3DC] bg-white text-[#6B655E]'
                     "
-                    @click="conditionType = 'utuh'; deductionAmount = 0"
+                    @click="selectConditionUtuh"
                   >
                     <p class="font-semibold">Kondisi Utuh 100%</p>
                     <p class="mt-0.5 text-[10.5px] text-[#556256]">Tanpa potongan (Rp0)</p>
@@ -373,23 +455,69 @@ async function handleSubmit(action: 'request' | 'process') {
                     @click="conditionType = 'potongan'"
                   >
                     <p class="font-semibold">Ada Potongan</p>
-                    <p class="mt-0.5 text-[10.5px] text-[#9E5245]">Telat / noda berat / rusak</p>
+                    <p class="mt-0.5 text-[10.5px] text-[#9E5245]">Sobek / noda / aksesoris hilang</p>
                   </button>
                 </div>
 
-                <div v-if="conditionType === 'potongan'">
-                  <label for="refund-deduction" class="mb-1 block text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
-                    Nominal Potongan (Maks. {{ formatRupiah(props.booking.deposit) }})
-                  </label>
-                  <input
-                    id="refund-deduction"
-                    v-model.number="deductionAmount"
-                    type="number"
-                    min="0"
-                    :max="props.booking.deposit"
-                    step="5000"
-                    class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3 py-2 text-xs text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none"
-                  >
+                <div v-if="conditionType === 'potongan'" class="space-y-3">
+                  <!-- Quick Selectable Deduction Reasons -->
+                  <div>
+                    <span class="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
+                      Pilih Jenis Potongan <span class="normal-case text-[#A39C93]">(bisa pilih lebih dari 1)</span>
+                    </span>
+                    <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                      <button
+                        v-for="preset in DEDUCTION_PRESETS"
+                        :key="preset.id"
+                        type="button"
+                        class="flex items-start justify-between gap-2 rounded-xl border px-3 py-2 text-left transition-all"
+                        :class="
+                          selectedDeductionIds.includes(preset.id)
+                            ? 'border-[#9E5245] bg-[#FAF4F1] text-[#2B2A28] ring-1 ring-[#9E5245]/30'
+                            : 'border-[#E8E3DC] bg-[#FAF8F5] text-[#6B655E] hover:border-[#9E5245]/60 hover:bg-white'
+                        "
+                        @click="toggleDeductionPreset(preset.id)"
+                      >
+                        <div class="min-w-0">
+                          <p class="text-[11.5px] font-semibold leading-tight text-[#2B2A28]">
+                            {{ preset.label }}
+                          </p>
+                          <p class="mt-0.5 text-[10px] leading-snug text-[#8A837A]">
+                            {{ preset.detail }}
+                          </p>
+                        </div>
+                        <span
+                          class="shrink-0 rounded-md px-1.5 py-0.5 text-[10.5px] font-semibold"
+                          :class="
+                            selectedDeductionIds.includes(preset.id)
+                              ? 'bg-[#9E5245] text-white'
+                              : 'bg-white text-[#9E5245] ring-1 ring-[#E8D0CB]'
+                          "
+                        >
+                          {{ formatRupiah(preset.amount) }}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Editable Total Deduction Amount -->
+                  <div>
+                    <label for="refund-deduction" class="mb-1 block text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
+                      Nominal Potongan (Maks. {{ formatRupiah(props.booking.deposit) }})
+                    </label>
+                    <input
+                      id="refund-deduction"
+                      v-model.number="deductionAmount"
+                      type="number"
+                      min="0"
+                      :max="props.booking.deposit"
+                      step="5000"
+                      class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3 py-2 text-xs text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none"
+                    >
+                    <p class="mt-1 text-[10.5px] text-[#8A837A]">
+                      Nominal otomatis terisi dari pilihan di atas, dan tetap bisa diubah manual jika perlu.
+                    </p>
+                  </div>
                 </div>
 
                 <!-- Live Refund Calculation Breakdown -->
