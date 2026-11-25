@@ -271,7 +271,7 @@ async function handleSubmit() {
     emit('created', newItem)
 
     toast.push('Busana Berhasil Ditayangkan!', {
-      description: `"${newItem.name}" kini sudah tampil di katalog utama SewaIn+.`,
+      description: `"${newItem.name}" kini sudah tampil di katalog utama Seruni Atelier.`,
       type: 'success',
     })
 

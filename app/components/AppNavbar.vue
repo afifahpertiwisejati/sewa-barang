@@ -46,7 +46,7 @@ function focusSearch() {
 async function handleLogout() {
   await logout()
   toast.push('Berhasil Keluar', {
-    description: 'Anda telah keluar dari akun SewaIn+.',
+    description: 'Anda telah keluar dari akun Seruni Atelier.',
     type: 'info',
   })
   if (route.path.startsWith('/admin') || route.path.startsWith('/dashboard')) {
@@ -70,8 +70,8 @@ async function handleLogout() {
           <Menu v-else class="h-5 w-5" />
         </button>
 
-        <NuxtLink to="/" class="font-serif text-xl font-medium tracking-tight text-[#2B2A28] sm:text-2xl">
-          SewaIn<span class="text-[#556256]">+</span>
+        <NuxtLink to="/" class="font-serif text-lg font-medium tracking-tight text-[#2B2A28] sm:text-2xl">
+          Seruni <span class="italic text-[#556256]">Atelier</span>
         </NuxtLink>
       </div>
 

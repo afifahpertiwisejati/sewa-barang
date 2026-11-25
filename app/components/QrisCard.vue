@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<{
 
 const { formatRupiah } = useFormatters()
 
-const merchantName = 'SEWAIN+ BOUTIQUE'
+const merchantName = 'SERUNI ATELIER'
 const nmid = 'ID1026008899123'
 
 const qrisPayload = computed(() => {
@@ -120,7 +120,7 @@ const qrMatrix = computed<boolean[][]>(() => {
           viewBox="0 0 25 25"
           shape-rendering="crispEdges"
           role="img"
-          aria-label="Kode QRIS SewaIn+ Boutique"
+          aria-label="Kode QRIS Seruni Atelier"
         >
           <rect width="25" height="25" fill="#FFFFFF" />
           <template v-for="(row, r) in qrMatrix" :key="r">

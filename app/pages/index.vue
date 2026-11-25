@@ -4,7 +4,7 @@ import type { ItemsListResponse } from '#shared/types/rental'
 import { DEFAULT_MAX_PRICE } from '../composables/useCatalogFilters'
 
 useHead({
-  title: 'SewaIn+ — Sewa Dress & Kebaya Wisuda, Lamaran, dan Pesta',
+  title: 'Seruni Atelier — Sewa Dress & Kebaya Wisuda, Lamaran, dan Pesta',
 })
 
 const { filters, hasActiveFilters, resetFilters } = useCatalogFilters()

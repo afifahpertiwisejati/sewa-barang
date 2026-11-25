@@ -18,7 +18,7 @@ const slides = [
     line1: 'Kebaya & Dress Modern,',
     scriptWord: 'Anggun',
     line2Suffix: 'Berkesan',
-    subtitle: 'SewaIn+ — Sewa Kebaya Modern, Dress Pesta, Jas Pria & Sepatu Formal',
+    subtitle: 'Seruni Atelier — Sewa Kebaya Modern, Dress Pesta, Jas Pria & Sepatu Formal',
     ctaLabel: 'Jelajahi Koleksi',
     image: '/images/hero-modest.jpg',
     category: 'Semua' as const,

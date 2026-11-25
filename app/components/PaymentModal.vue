@@ -163,7 +163,7 @@ function printReceipt() {
             <CheckCircle2 v-else class="h-5 w-5 text-white" />
             <div>
               <p class="text-[10px] uppercase tracking-widest text-white/75">
-                SewaIn+ Boutique
+                Seruni Atelier Boutique
               </p>
               <h3 class="font-serif text-lg font-medium">
                 {{

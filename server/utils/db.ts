@@ -201,7 +201,7 @@ function mapItemRow(row: ItemRow): RentalItem {
     description: row.description,
     specs: parseJsonColumn<ItemSpec[]>(row.specs_json, []),
     owner: parseJsonColumn<ItemOwner>(row.owner_json, {
-      name: 'SewaIn+ Boutique',
+      name: 'Seruni Atelier',
       city: row.location,
       verified: true,
       joinedYear: 2024,

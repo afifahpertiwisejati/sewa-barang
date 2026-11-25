@@ -28,7 +28,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Panel Admin Butik — SewaIn+',
+  title: 'Panel Admin Butik — Seruni Atelier',
 })
 
 const route = useRoute()
@@ -290,7 +290,7 @@ async function handleItemCreated() {
           Role Admin Butik
         </span>
         <h1 class="mt-2 font-serif text-3xl font-normal tracking-tight text-[#2B2A28]">
-          Panel Admin SewaIn+
+          Panel Admin Seruni Atelier
         </h1>
         <p class="mt-1 text-xs text-[#8A837A] sm:text-sm">
           Halo, <strong class="text-[#2B2A28]">{{ user?.name }}</strong> — kelola semua pesanan masuk, ubah harga/status, atau tambah koleksi baru.

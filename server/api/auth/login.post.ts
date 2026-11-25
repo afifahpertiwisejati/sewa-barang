@@ -14,7 +14,10 @@ export default defineEventHandler(async (event): Promise<AuthResponse> => {
     })
   }
 
-  const found = await findUserByEmail(email)
+  let found = await findUserByEmail(email)
+  if (!found && (email === 'admin@sewain.id' || email === 'admin@seruni.id')) {
+    found = await findUserByEmail(email === 'admin@sewain.id' ? 'admin@seruni.id' : 'admin@sewain.id')
+  }
 
   if (!found || !verifyPassword(password, found.passwordHash)) {
     throw createError({

@@ -156,22 +156,22 @@ export const PAYMENT_ACCOUNTS: Record<PaymentMethod, { label: string, account: s
   transfer_bca: {
     label: 'Transfer BCA',
     account: '1234-5678-90',
-    holder: 'a.n. SewaIn Boutique Indonesia',
+    holder: 'a.n. Seruni Atelier Indonesia',
   },
   transfer_mandiri: {
     label: 'Transfer Mandiri',
     account: '137-00-9876543-2',
-    holder: 'a.n. SewaIn Boutique Indonesia',
+    holder: 'a.n. Seruni Atelier Indonesia',
   },
   qris: {
     label: 'QRIS',
     account: 'NMID: ID1026008899123',
-    holder: 'Merchant: SewaIn+ Boutique',
+    holder: 'Merchant: Seruni Atelier',
   },
   gopay: {
     label: 'GoPay / E-Wallet',
     account: '0811-2233-4455',
-    holder: 'a.n. Ayu Prameswari (SewaIn+)',
+    holder: 'a.n. Ayu Prameswari (Seruni Atelier)',
   },
 }
 

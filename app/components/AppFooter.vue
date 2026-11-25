@@ -85,7 +85,7 @@ function handleSubscribe() {
           <!-- Brand -->
           <div class="lg:col-span-3">
             <NuxtLink to="/" class="font-serif text-2xl font-medium tracking-tight text-white">
-              SewaIn+
+              Seruni <span class="italic text-[#D8DFD7]">Atelier</span>
             </NuxtLink>
             <p class="mt-2.5 text-xs leading-relaxed text-[#D8DFD7]">
               Platform kurasi sewa kebaya wisuda, gaun pesta, dan busana lamaran di Indonesia. Tampil memukau tanpa harus memenuhi lemari.
@@ -185,7 +185,7 @@ function handleSubscribe() {
       <!-- Bottom Copyright Bar -->
       <div class="border-t border-white/10 bg-[#4A564B]">
         <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-[11px] text-[#D8DFD7] sm:flex-row sm:px-6 lg:px-8">
-          <p>&copy; {{ new Date().getFullYear() }} SewaIn+. Seluruh hak cipta dilindungi.</p>
+          <p>&copy; {{ new Date().getFullYear() }} Seruni Atelier. Seluruh hak cipta dilindungi.</p>
           <div class="flex items-center gap-2">
             <span class="rounded bg-white/15 px-2 py-0.5 text-[10px] font-medium text-white">QRIS</span>
             <span class="rounded bg-white/15 px-2 py-0.5 text-[10px] font-medium text-white">BCA</span>

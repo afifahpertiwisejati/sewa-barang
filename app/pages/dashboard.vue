@@ -13,7 +13,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Penyewaan Saya — SewaIn+',
+  title: 'Penyewaan Saya — Seruni Atelier',
 })
 
 const { user, isAdmin } = useAuth()

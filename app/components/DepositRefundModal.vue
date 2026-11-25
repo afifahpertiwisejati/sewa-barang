@@ -104,7 +104,7 @@ async function handleSubmit(action: 'request' | 'process') {
       body: {
         action,
         depositRefundMethod: selectedMethod.value,
-        depositRefundAccount: isCashMethod.value ? 'Tunai di Butik SewaIn+' : refundAccount.value.trim(),
+        depositRefundAccount: isCashMethod.value ? 'Tunai di Butik Seruni Atelier' : refundAccount.value.trim(),
         depositDeduction: action === 'process' ? effectiveDeduction.value : 0,
         depositRefundNote: refundNote.value.trim() || undefined,
         completeRental: action === 'process' ? completeRental.value : false,

@@ -33,7 +33,7 @@ watch(
 )
 
 useHead(() => ({
-  title: item.value ? `${item.value.name} — SewaIn+` : 'Detail Busana — SewaIn+',
+  title: item.value ? `${item.value.name} — Seruni Atelier` : 'Detail Busana — Seruni Atelier',
 }))
 
 async function handleBooked() {

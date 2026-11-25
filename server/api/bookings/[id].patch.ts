@@ -138,7 +138,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
             title: 'Penyewaan Selesai',
             message: booking.deposit > 0 && booking.depositStatus !== 'dikembalikan'
               ? `Sewa ${booking.itemName} (${booking.id}) telah diselesaikan oleh Admin. Anda dapat mengajukan pengembalian deposit Rp${booking.deposit.toLocaleString('id-ID')}.`
-              : `Sewa ${booking.itemName} (${booking.id}) telah selesai. Terima kasih telah menyewa di SewaIn+!`,
+              : `Sewa ${booking.itemName} (${booking.id}) telah selesai. Terima kasih telah menyewa di Seruni Atelier!`,
             bookingId: booking.id,
             actionUrl: '/dashboard',
           }),

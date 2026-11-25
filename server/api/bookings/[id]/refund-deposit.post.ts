@@ -87,7 +87,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
 
     booking.depositStatus = 'menunggu_pengembalian'
     booking.depositRefundMethod = method
-    booking.depositRefundAccount = isCash ? 'Ambil Tunai di Butik SewaIn+' : account
+    booking.depositRefundAccount = isCash ? 'Ambil Tunai di Butik Seruni Atelier' : account
     if (note) {
       booking.depositRefundNote = note
     }
@@ -136,7 +136,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
   booking.depositDeduction = deduction
   booking.depositRefundAmount = refundAmount
   booking.depositRefundMethod = method
-  booking.depositRefundAccount = isCash ? 'Tunai di Butik SewaIn+' : account
+  booking.depositRefundAccount = isCash ? 'Tunai di Butik Seruni Atelier' : account
   booking.depositStatus = deduction > 0 ? 'dipotong' : 'dikembalikan'
   booking.depositRefundReference = booking.depositRefundReference || generateRefundRef()
   booking.depositRefundedAt = new Date().toISOString()

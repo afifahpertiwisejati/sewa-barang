@@ -2,7 +2,7 @@
 import { ArrowRight, Loader2, Sparkles } from 'lucide-vue-next'
 
 useHead({
-  title: 'Masuk & Daftar — SewaIn+',
+  title: 'Masuk & Daftar — Seruni Atelier',
 })
 
 const route = useRoute()
@@ -119,7 +119,7 @@ async function handleRegisterSubmit() {
         <div class="p-8">
           <span class="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1 text-[11px] font-medium text-[#556256]">
             <Sparkles class="h-3.5 w-3.5" />
-            SewaIn+ Boutique Access
+            Seruni Atelier Access
           </span>
           <h1 class="mt-4 font-serif text-3xl leading-tight text-[#2B2A28]">
             Tampil Anggun,<br>
@@ -133,7 +133,7 @@ async function handleRegisterSubmit() {
         <div class="h-72 w-full overflow-hidden">
           <img
             src="/images/kebaya-burgundy-couture.jpg"
-            alt="SewaIn+ Boutique"
+            alt="Seruni Atelier"
             class="h-full w-full object-cover object-top"
           >
         </div>

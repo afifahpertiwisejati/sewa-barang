@@ -2849,11 +2849,11 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'admin-sewain',
       name: 'Ayu Prameswari',
-      email: 'admin@sewain.id',
+      email: 'admin@seruni.id',
       phone: '0811-2233-4455',
       role: 'admin',
       avatarInitials: 'AP',
-      passwordHash: hashPassword('admin123'),
+      passwordHash: hashPassword('123456'),
       createdAt: '2026-01-01T00:00:00.000Z',
     },
     {

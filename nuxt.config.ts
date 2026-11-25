@@ -34,7 +34,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'SewaIn+ — Sewa Kebaya, Dress Sopan, Jas Pria & Sepatu Pesta',
+      title: 'Seruni Atelier — Sewa Kebaya, Dress Sopan, Jas Pria & Sepatu Pesta',
       htmlAttrs: {
         lang: 'id',
       },
