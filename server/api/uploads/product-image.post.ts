@@ -1,6 +1,5 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { requireAdminUser } from '../../utils/auth'
+import { insertUploadedFile } from '../../utils/db'
 
 const ALLOWED_TYPES: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -9,7 +8,7 @@ const ALLOWED_TYPES: Record<string, string> = {
   'image/webp': 'webp',
 }
 
-const MAX_BYTES = 5 * 1024 * 1024 // 5 MB
+const MAX_BYTES = 4 * 1024 * 1024 // 4 MB (aman di bawah batas payload Vercel Serverless)
 
 export default defineEventHandler(async (event) => {
   await requireAdminUser(event)
@@ -36,20 +35,20 @@ export default defineEventHandler(async (event) => {
   if (filePart.data.length > MAX_BYTES) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Ukuran foto produk maksimal 5 MB.',
+      statusMessage: 'Ukuran foto produk maksimal 4 MB.',
     })
   }
 
-  const uploadDir = resolve(process.cwd(), 'public', 'uploads', 'items')
-  if (!existsSync(uploadDir)) {
-    mkdirSync(uploadDir, { recursive: true })
-  }
-
-  const filename = `item-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`
-  writeFileSync(resolve(uploadDir, filename), filePart.data)
+  const fileId = `item-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`
+  await insertUploadedFile({
+    id: fileId,
+    folder: 'items',
+    mimeType: mime === 'image/jpg' ? 'image/jpeg' : mime,
+    data: filePart.data,
+  })
 
   setResponseStatus(event, 201)
   return {
-    url: `/uploads/items/${filename}`,
+    url: `/api/uploads/${fileId}`,
   }
 })

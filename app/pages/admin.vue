@@ -172,8 +172,9 @@ async function handleEditPhotoUpload(event: Event) {
 
   uploadingEditPhoto.value = true
   try {
+    const optimizedFile = await compressImageFile(file)
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('file', optimizedFile)
     const res = await $fetch<{ url: string }>('/api/uploads/product-image', {
       method: 'POST',
       body: formData,

@@ -53,7 +53,7 @@ export default defineEventHandler(async (event): Promise<RentalItem> => {
     }
     item.sizes = cleanedSizes
   }
-  if (typeof body?.imageUrl === 'string' && /^(https?:\/\/|\/images\/|\/uploads\/).+/i.test(body.imageUrl.trim())) {
+  if (typeof body?.imageUrl === 'string' && /^(https?:\/\/|\/images\/|\/uploads\/|\/api\/uploads\/).+/i.test(body.imageUrl.trim())) {
     const newUrl = body.imageUrl.trim()
     item.imageUrl = newUrl
     item.gallery = Array.from(new Set([newUrl, ...item.gallery.filter(u => u !== newUrl)]))

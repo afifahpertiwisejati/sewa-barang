@@ -123,3 +123,17 @@ CREATE TABLE IF NOT EXISTS `notifications` (
   KEY `idx_notifications_user` (`user_id`, `is_read`, `created_at`),
   KEY `idx_notifications_role` (`recipient_role`, `is_read`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 5. Uploaded Files Table (Persistent Product Photos & Payment Proofs on Vercel)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `uploaded_files` (
+  `id` VARCHAR(80) NOT NULL,
+  `folder` VARCHAR(32) NOT NULL,
+  `mime_type` VARCHAR(64) NOT NULL,
+  `data_base64` MEDIUMTEXT NOT NULL,
+  `size_bytes` INT NOT NULL,
+  `created_at` VARCHAR(40) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_uploaded_files_folder` (`folder`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

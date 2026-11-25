@@ -138,8 +138,9 @@ async function handleProductPhotoUpload(event: Event) {
   try {
     const uploadedUrls: string[] = []
     for (const file of files) {
+      const optimizedFile = await compressImageFile(file)
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', optimizedFile)
       const res = await $fetch<{ url: string }>('/api/uploads/product-image', {
         method: 'POST',
         body: formData,
@@ -209,7 +210,7 @@ async function handleSubmit() {
     formError.value = 'Deskripsi lengkap minimal 15 karakter agar penyewa yakin.'
     return
   }
-  if (!/^(https?:\/\/|\/images\/|\/uploads\/).+/i.test(form.imageUrl.trim())) {
+  if (!/^(https?:\/\/|\/images\/|\/uploads\/|\/api\/uploads\/).+/i.test(form.imageUrl.trim())) {
     formError.value = 'Silakan upload foto produk dari perangkat Anda atau masukkan URL gambar yang valid.'
     return
   }

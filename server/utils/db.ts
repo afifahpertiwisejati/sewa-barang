@@ -308,7 +308,8 @@ async function initializeSchemaAndSeed(): Promise<Pool> {
         (SELECT COUNT(*) FROM users) AS users_cnt,
         (SELECT COUNT(*) FROM items) AS items_cnt,
         (SELECT deposit_status FROM bookings LIMIT 1) AS dep_col,
-        (SELECT COUNT(*) FROM notifications) AS notif_cnt`,
+        (SELECT COUNT(*) FROM notifications) AS notif_cnt,
+        (SELECT COUNT(*) FROM uploaded_files) AS files_cnt`,
     )
     const usersCnt = Number(probeRows[0]?.users_cnt || 0)
     const itemsCnt = Number(probeRows[0]?.items_cnt || 0)
@@ -476,6 +477,19 @@ async function initializeSchemaAndSeed(): Promise<Pool> {
       PRIMARY KEY (id),
       KEY idx_notifications_user (user_id, is_read, created_at),
       KEY idx_notifications_role (recipient_role, is_read, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS uploaded_files (
+      id VARCHAR(80) NOT NULL,
+      folder VARCHAR(32) NOT NULL,
+      mime_type VARCHAR(64) NOT NULL,
+      data_base64 MEDIUMTEXT NOT NULL,
+      size_bytes INT NOT NULL,
+      created_at VARCHAR(40) NOT NULL,
+      PRIMARY KEY (id),
+      KEY idx_uploaded_files_folder (folder, created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `)
 
@@ -1036,6 +1050,58 @@ export async function markAllNotificationsRead(userId: string, role: UserRole): 
     [userId],
   )
   return result.affectedRows
+}
+
+// =============================================================================
+// Uploaded Files Repository (Persistent Image Storage for Vercel Serverless)
+// =============================================================================
+interface UploadedFileRow extends RowDataPacket {
+  id: string
+  folder: string
+  mime_type: string
+  data_base64: string
+  size_bytes: number
+  created_at: string
+}
+
+export async function insertUploadedFile(input: {
+  id: string
+  folder: string
+  mimeType: string
+  data: Buffer
+}): Promise<void> {
+  const pool = await getDbPool()
+  await pool.execute(
+    `INSERT INTO uploaded_files (id, folder, mime_type, data_base64, size_bytes, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      input.id,
+      input.folder,
+      input.mimeType,
+      input.data.toString('base64'),
+      input.data.length,
+      new Date().toISOString(),
+    ],
+  )
+}
+
+export async function findUploadedFileById(id: string): Promise<{
+  id: string
+  mimeType: string
+  data: Buffer
+} | null> {
+  const pool = await getDbPool()
+  const [rows] = await pool.execute<UploadedFileRow[]>(
+    'SELECT id, mime_type, data_base64 FROM uploaded_files WHERE id = ? LIMIT 1',
+    [id],
+  )
+  const row = rows[0]
+  if (!row) return null
+  return {
+    id: row.id,
+    mimeType: row.mime_type,
+    data: Buffer.from(row.data_base64, 'base64'),
+  }
 }
 
 export async function getDbHealthInfo() {

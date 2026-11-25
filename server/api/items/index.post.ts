@@ -82,7 +82,7 @@ export default defineEventHandler(async (event): Promise<RentalItem> => {
     })
   }
 
-  const isValidImageUrl = (u: string) => /^(https?:\/\/|\/images\/|\/uploads\/).+/i.test(u)
+  const isValidImageUrl = (u: string) => /^(https?:\/\/|\/images\/|\/uploads\/|\/api\/uploads\/).+/i.test(u)
 
   if (!imageUrl || !isValidImageUrl(imageUrl)) {
     throw createError({
