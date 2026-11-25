@@ -45,14 +45,67 @@ const slides = [
 
 const currentSlide = ref(0)
 const activeSlide = computed(() => slides[currentSlide.value] ?? slides[0]!)
+const touchStartX = ref<number | null>(null)
+const touchStartY = ref<number | null>(null)
+let autoSlideTimer: ReturnType<typeof setInterval> | null = null
+
+function restartAutoSlide() {
+  if (!import.meta.client) return
+  if (autoSlideTimer) clearInterval(autoSlideTimer)
+  autoSlideTimer = setInterval(() => {
+    currentSlide.value = (currentSlide.value + 1) % slides.length
+  }, 5500)
+}
 
 function prevSlide() {
   currentSlide.value = (currentSlide.value - 1 + slides.length) % slides.length
+  restartAutoSlide()
 }
 
 function nextSlide() {
   currentSlide.value = (currentSlide.value + 1) % slides.length
+  restartAutoSlide()
 }
+
+function goToSlide(idx: number) {
+  currentSlide.value = idx
+  restartAutoSlide()
+}
+
+function handleTouchStart(event: TouchEvent) {
+  const touch = event.touches[0]
+  if (!touch) return
+  touchStartX.value = touch.clientX
+  touchStartY.value = touch.clientY
+}
+
+function handleTouchEnd(event: TouchEvent) {
+  if (touchStartX.value === null || touchStartY.value === null) return
+  const touch = event.changedTouches[0]
+  if (!touch) return
+
+  const deltaX = touch.clientX - touchStartX.value
+  const deltaY = touch.clientY - touchStartY.value
+  touchStartX.value = null
+  touchStartY.value = null
+
+  // Horizontal swipe threshold (ignore vertical page scroll)
+  if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+    if (deltaX < 0) nextSlide()
+    else prevSlide()
+  }
+}
+
+onMounted(() => {
+  restartAutoSlide()
+})
+
+onBeforeUnmount(() => {
+  if (autoSlideTimer) {
+    clearInterval(autoSlideTimer)
+    autoSlideTimer = null
+  }
+})
 
 function handleHeroCta() {
   filters.value.category = activeSlide.value.category
@@ -73,9 +126,13 @@ function submitSearch() {
 <template>
   <section class="bg-[#FAF8F5]">
     <!-- Editorial Split Hero Banner -->
-    <div class="relative overflow-hidden bg-[#EAE5DE]">
+    <div
+      class="relative overflow-hidden bg-[#EAE5DE] touch-pan-y select-none"
+      @touchstart.passive="handleTouchStart"
+      @touchend.passive="handleTouchEnd"
+    >
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="relative grid min-h-[360px] grid-cols-1 items-center gap-6 py-10 sm:min-h-[430px] md:grid-cols-12 md:py-0">
+        <div class="relative grid min-h-[360px] grid-cols-1 items-center gap-6 py-8 sm:min-h-[430px] sm:py-10 md:grid-cols-12 md:py-0">
           <!-- Left Editorial Typography -->
           <div class="z-10 text-left md:col-span-6 md:py-16 md:pl-8 lg:pl-12">
             <h1 class="font-serif text-4xl font-normal leading-[1.15] tracking-tight text-[#2B2A28] sm:text-5xl lg:text-[54px]">
@@ -109,13 +166,32 @@ function submitSearch() {
               <img
                 :src="activeSlide.image"
                 :alt="activeSlide.subtitle"
+                draggable="false"
                 class="h-full w-full object-cover object-top transition-all duration-500"
               >
               <div class="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#EAE5DE]/60 via-transparent to-transparent md:from-[#EAE5DE]/35" />
+
+              <!-- Mobile Carousel Arrows (visible on phone right over the photo) -->
+              <button
+                type="button"
+                class="absolute left-2.5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#2B2A28] shadow-sm backdrop-blur-sm transition-colors active:scale-95 md:hidden"
+                aria-label="Slide sebelumnya"
+                @click="prevSlide"
+              >
+                <ChevronLeft class="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                class="absolute right-2.5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#2B2A28] shadow-sm backdrop-blur-sm transition-colors active:scale-95 md:hidden"
+                aria-label="Slide berikutnya"
+                @click="nextSlide"
+              >
+                <ChevronRight class="h-4 w-4" />
+              </button>
             </div>
           </div>
 
-          <!-- Carousel Arrows -->
+          <!-- Desktop Carousel Arrows -->
           <button
             type="button"
             class="absolute left-0 top-1/2 z-20 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#2B2A28]/15 text-[#2B2A28] backdrop-blur-sm transition-colors hover:bg-[#2B2A28]/25 md:flex"
@@ -135,16 +211,20 @@ function submitSearch() {
         </div>
 
         <!-- Pagination Dots -->
-        <div class="flex items-center justify-center gap-2 pb-5 md:pb-6">
+        <div class="flex items-center justify-center gap-1 pb-4 md:pb-6">
           <button
             v-for="(slide, idx) in slides"
             :key="slide.subtitle"
             type="button"
-            class="h-1.5 rounded-full transition-all"
-            :class="idx === currentSlide ? 'w-5 bg-[#2B2A28]' : 'w-1.5 bg-[#2B2A28]/25 hover:bg-[#2B2A28]/45'"
+            class="flex items-center justify-center p-1.5"
             :aria-label="`Tampilkan slide ${idx + 1}`"
-            @click="currentSlide = idx"
-          />
+            @click="goToSlide(idx)"
+          >
+            <span
+              class="block h-1.5 rounded-full transition-all"
+              :class="idx === currentSlide ? 'w-6 bg-[#2B2A28]' : 'w-1.5 bg-[#2B2A28]/30 hover:bg-[#2B2A28]/50'"
+            />
+          </button>
         </div>
       </div>
     </div>

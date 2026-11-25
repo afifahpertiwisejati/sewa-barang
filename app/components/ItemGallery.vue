@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Images } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, Images } from 'lucide-vue-next'
 import type { ItemColorVariant } from '#shared/types/rental'
 
 const props = defineProps<{
@@ -61,11 +61,47 @@ watch(() => props.images, () => {
   failedIndices.value = {}
 })
 
+const touchStartX = ref<number | null>(null)
+const touchStartY = ref<number | null>(null)
+
 function selectSlide(idx: number) {
   activeIndex.value = idx
   const slide = slides.value[idx]
   if (slide?.colorName) {
     emit('update:selectedColor', slide.colorName)
+  }
+}
+
+function prevSlide() {
+  if (slides.value.length <= 1) return
+  selectSlide((activeIndex.value - 1 + slides.value.length) % slides.value.length)
+}
+
+function nextSlide() {
+  if (slides.value.length <= 1) return
+  selectSlide((activeIndex.value + 1) % slides.value.length)
+}
+
+function handleTouchStart(event: TouchEvent) {
+  const touch = event.touches[0]
+  if (!touch) return
+  touchStartX.value = touch.clientX
+  touchStartY.value = touch.clientY
+}
+
+function handleTouchEnd(event: TouchEvent) {
+  if (touchStartX.value === null || touchStartY.value === null) return
+  const touch = event.changedTouches[0]
+  if (!touch) return
+
+  const deltaX = touch.clientX - touchStartX.value
+  const deltaY = touch.clientY - touchStartY.value
+  touchStartX.value = null
+  touchStartY.value = null
+
+  if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+    if (deltaX < 0) nextSlide()
+    else prevSlide()
   }
 }
 </script>
@@ -74,16 +110,38 @@ function selectSlide(idx: number) {
   <div class="space-y-3">
     <!-- Main Studio Frame (explicit h-full w-full object-contain for Firefox & Chrome compatibility) -->
     <div
-      class="relative w-full overflow-hidden rounded-2xl border border-[#E8E3DC]/80 bg-[#F4F1EC] p-3"
+      class="relative w-full overflow-hidden rounded-2xl border border-[#E8E3DC]/80 bg-[#F4F1EC] p-3 touch-pan-y select-none"
       style="height: 520px;"
+      @touchstart.passive="handleTouchStart"
+      @touchend.passive="handleTouchEnd"
     >
       <img
         :src="currentSrc"
         :alt="currentSlide.colorName ? `${props.name} — Warna ${currentSlide.colorName}` : props.name"
+        draggable="false"
         class="h-full w-full rounded-xl object-contain transition-all duration-300"
         style="width: 100%; height: 100%; object-fit: contain;"
         @error="failedIndices[activeIndex] = true"
       >
+
+      <button
+        v-if="slides.length > 1"
+        type="button"
+        class="absolute left-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#2B2A28] shadow-sm backdrop-blur-sm transition-colors hover:bg-white active:scale-95"
+        aria-label="Foto sebelumnya"
+        @click="prevSlide"
+      >
+        <ChevronLeft class="h-4 w-4" />
+      </button>
+      <button
+        v-if="slides.length > 1"
+        type="button"
+        class="absolute right-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#2B2A28] shadow-sm backdrop-blur-sm transition-colors hover:bg-white active:scale-95"
+        aria-label="Foto berikutnya"
+        @click="nextSlide"
+      >
+        <ChevronRight class="h-4 w-4" />
+      </button>
 
       <!-- Active Color Pill (Bottom-Left) -->
       <div
