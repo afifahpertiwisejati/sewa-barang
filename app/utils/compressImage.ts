@@ -1,5 +1,6 @@
 export const MAX_UPLOAD_PHOTO_BYTES = 10 * 1024 * 1024 // 10 MB
-const TARGET_SERVERLESS_BYTES = 3.5 * 1024 * 1024 // Safe margin under Vercel's 4.5 MB function payload limit
+const TARGET_UPLOAD_BYTES = 1.2 * 1024 * 1024 // ~1.2 MB for fast & reliable upload on mobile + Vercel
+const HARD_SERVERLESS_LIMIT = 4 * 1024 * 1024 // 4 MB safety ceiling below Vercel's 4.5 MB body limit
 
 function renderCanvasBlob(
   img: HTMLImageElement,
@@ -36,14 +37,30 @@ function renderCanvasBlob(
   })
 }
 
+function loadImageFromFile(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      resolve(img)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('DECODE_FAILED'))
+    }
+    img.src = objectUrl
+  })
+}
+
 /**
  * Validates up to 10 MB and adaptively compresses large photos on the client
- * so up to 10 MB camera photos always upload reliably on Vercel Serverless.
+ * so camera/gallery photos up to 10 MB upload fast and reliably on Vercel.
  */
 export async function compressImageFile(
   file: File,
-  maxDimension = 1600,
-  quality = 0.85,
+  maxDimension = 1400,
+  quality = 0.82,
 ): Promise<File> {
   if (file.size > MAX_UPLOAD_PHOTO_BYTES) {
     throw new Error('Ukuran foto terlalu besar. Maksimal 10 MB per foto.')
@@ -51,54 +68,45 @@ export async function compressImageFile(
 
   if (!import.meta.client) return file
 
-  const standardMime = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(
-    (file.type || '').toLowerCase(),
-  )
-  if (standardMime && file.size <= 600 * 1024) {
+  const mime = (file.type || '').toLowerCase()
+  const standardMime = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(mime)
+  if (standardMime && file.size <= 450 * 1024) {
     return file
   }
 
-  return new Promise<File>((resolve) => {
-    const objectUrl = URL.createObjectURL(file)
-    const img = new Image()
+  try {
+    const img = await loadImageFromFile(file)
+    const attempts: Array<[number, number]> = [
+      [maxDimension, quality],
+      [1200, 0.75],
+      [1000, 0.68],
+      [850, 0.6],
+    ]
 
-    img.onload = async () => {
-      try {
-        const attempts: Array<[number, number]> = [
-          [maxDimension, quality],
-          [1400, 0.76],
-          [1200, 0.68],
-          [1000, 0.6],
-        ]
-
-        let bestBlob: Blob | null = null
-        for (const [dim, q] of attempts) {
-          const blob = await renderCanvasBlob(img, dim, q)
-          if (blob) {
-            bestBlob = blob
-            if (blob.size <= TARGET_SERVERLESS_BYTES) break
-          }
-        }
-
-        URL.revokeObjectURL(objectUrl)
-        if (!bestBlob) {
-          resolve(file)
-          return
-        }
-        const baseName = file.name.replace(/\.[^.]+$/, '') || 'photo'
-        resolve(new File([bestBlob], `${baseName}.jpg`, { type: 'image/jpeg' }))
-      }
-      catch {
-        URL.revokeObjectURL(objectUrl)
-        resolve(file)
+    let bestBlob: Blob | null = null
+    for (const [dim, q] of attempts) {
+      const blob = await renderCanvasBlob(img, dim, q)
+      if (blob) {
+        bestBlob = blob
+        if (blob.size <= TARGET_UPLOAD_BYTES) break
       }
     }
 
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl)
-      resolve(file)
+    if (bestBlob) {
+      const baseName = file.name.replace(/\.[^.]+$/, '') || 'photo'
+      return new File([bestBlob], `${baseName}.jpg`, { type: 'image/jpeg' })
     }
+  }
+  catch {
+    // Browser could not decode image on canvas (e.g. HEIC on non-Safari browser)
+    if (file.size > HARD_SERVERLESS_LIMIT) {
+      throw new Error('Format foto tidak dapat dikompresi oleh browser (mis. HEIC). Simpan/ubah ke JPG atau PNG lalu coba lagi.')
+    }
+  }
 
-    img.src = objectUrl
-  })
+  if (file.size > HARD_SERVERLESS_LIMIT) {
+    throw new Error('Foto terlalu besar setelah kompresi. Coba gunakan foto JPG/PNG dengan resolusi lebih kecil.')
+  }
+
+  return file
 }

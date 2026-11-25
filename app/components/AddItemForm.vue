@@ -459,7 +459,10 @@ async function handleSubmit() {
             </span>
 
             <!-- Direct File Upload Dropzone -->
-            <label class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#CFC8BE] bg-[#FAF8F5] px-4 py-5 text-center transition-colors hover:border-[#556256] hover:bg-white">
+            <label
+              for="add-item-photo-input"
+              class="relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#CFC8BE] bg-[#FAF8F5] px-4 py-5 text-center transition-colors hover:border-[#556256] hover:bg-white"
+            >
               <Loader2 v-if="isUploadingImage" class="h-6 w-6 animate-spin text-[#556256]" />
               <Upload v-else class="h-6 w-6 text-[#556256]" />
               <span class="mt-2 text-xs font-semibold text-[#2B2A28]">
@@ -469,10 +472,11 @@ async function handleSubmit() {
                 Mendukung JPG, PNG, WEBP (maks. 10 MB) &bull; Bisa pilih beberapa foto sekaligus
               </span>
               <input
+                id="add-item-photo-input"
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/*"
                 multiple
-                class="hidden"
+                class="sr-only"
                 :disabled="isUploadingImage"
                 @change="handleProductPhotoUpload"
               >

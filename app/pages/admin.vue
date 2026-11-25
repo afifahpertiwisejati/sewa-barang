@@ -453,27 +453,39 @@ async function handleItemCreated() {
               <tr v-for="item in catalogItems" :key="item.id" class="hover:bg-[#FAF8F5]/70">
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-3">
-                    <div class="relative h-12 w-10 shrink-0 overflow-hidden rounded-lg bg-[#EFECE7]">
-                      <img
-                        :src="editingItemId === item.id ? editForm.imageUrl : item.imageUrl"
-                        :alt="item.name"
-                        class="h-full w-full object-cover object-top"
-                      >
+                    <div class="flex shrink-0 flex-col items-center gap-1.5">
+                      <div class="relative h-12 w-10 overflow-hidden rounded-lg bg-[#EFECE7]">
+                        <img
+                          :src="editingItemId === item.id ? editForm.imageUrl : item.imageUrl"
+                          :alt="item.name"
+                          class="h-full w-full object-cover object-top"
+                        >
+                        <label
+                          v-if="editingItemId === item.id"
+                          :for="`edit-photo-${item.id}`"
+                          class="absolute inset-0 flex cursor-pointer items-center justify-center bg-[#2B2A28]/55 text-white transition-opacity hover:bg-[#2B2A28]/75"
+                          title="Ganti foto produk"
+                        >
+                          <Loader2 v-if="uploadingEditPhoto" class="h-3.5 w-3.5 animate-spin" />
+                          <Upload v-else class="h-3.5 w-3.5" />
+                        </label>
+                      </div>
                       <label
                         v-if="editingItemId === item.id"
-                        class="absolute inset-0 flex cursor-pointer items-center justify-center bg-[#2B2A28]/60 text-white transition-opacity hover:bg-[#2B2A28]/75"
-                        title="Ganti foto produk"
+                        :for="`edit-photo-${item.id}`"
+                        class="cursor-pointer rounded border border-[#D7E0D5] bg-[#F3F5F2] px-1.5 py-0.5 text-[10px] font-medium text-[#556256] hover:bg-[#E5ECE4]"
                       >
-                        <Loader2 v-if="uploadingEditPhoto" class="h-3.5 w-3.5 animate-spin" />
-                        <Upload v-else class="h-3.5 w-3.5" />
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          class="hidden"
-                          :disabled="uploadingEditPhoto"
-                          @change="handleEditPhotoUpload"
-                        >
+                        {{ uploadingEditPhoto ? 'Upload...' : 'Ganti Foto' }}
                       </label>
+                      <input
+                        v-if="editingItemId === item.id"
+                        :id="`edit-photo-${item.id}`"
+                        type="file"
+                        accept="image/*"
+                        class="sr-only"
+                        :disabled="uploadingEditPhoto"
+                        @change="handleEditPhotoUpload"
+                      >
                     </div>
                     <div class="min-w-0">
                       <input
