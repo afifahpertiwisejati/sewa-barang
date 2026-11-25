@@ -14,7 +14,14 @@ import {
   Wallet,
   X,
 } from 'lucide-vue-next'
-import type { BookingRecord, ItemsListResponse, RentalItem } from '#shared/types/rental'
+import {
+  AVAILABLE_SIZES,
+  SHOE_SIZES_MEN,
+  SHOE_SIZES_WOMEN,
+  type BookingRecord,
+  type ItemsListResponse,
+  type RentalItem,
+} from '#shared/types/rental'
 
 definePageMeta({
   middleware: ['admin'],
@@ -48,6 +55,8 @@ const editForm = reactive({
   pricePerDay: 0,
   deposit: 0,
   status: 'Tersedia' as RentalItem['status'],
+  sizes: [] as string[],
+  customSize: '',
   imageUrl: '',
 })
 const savingEdit = ref(false)
@@ -110,12 +119,49 @@ const stats = computed(() => {
   }
 })
 
+function getSizeOptionsForItem(item: RentalItem): string[] {
+  const base = item.category === 'High Heels'
+    ? [...SHOE_SIZES_WOMEN]
+    : item.category === 'Sepatu Pantofel'
+      ? [...SHOE_SIZES_MEN]
+      : [...AVAILABLE_SIZES]
+  return Array.from(new Set([...base, ...editForm.sizes]))
+}
+
+function toggleEditSize(size: string) {
+  const idx = editForm.sizes.indexOf(size)
+  if (idx >= 0) {
+    if (editForm.sizes.length <= 1) {
+      toast.push('Minimal 1 Ukuran', {
+        description: 'Produk harus memiliki minimal 1 ukuran tersedia.',
+        type: 'info',
+      })
+      return
+    }
+    editForm.sizes.splice(idx, 1)
+  }
+  else {
+    editForm.sizes.push(size)
+  }
+}
+
+function addCustomEditSize() {
+  const val = editForm.customSize.trim()
+  if (!val) return
+  if (!editForm.sizes.includes(val)) {
+    editForm.sizes.push(val)
+  }
+  editForm.customSize = ''
+}
+
 function startEdit(item: RentalItem) {
   editingItemId.value = item.id
   editForm.name = item.name
   editForm.pricePerDay = item.pricePerDay
   editForm.deposit = item.deposit
   editForm.status = item.status
+  editForm.sizes = [...(item.sizes?.length ? item.sizes : ['All Size'])]
+  editForm.customSize = ''
   editForm.imageUrl = item.imageUrl
 }
 
@@ -156,6 +202,14 @@ function cancelEdit() {
 }
 
 async function saveEdit(itemId: string) {
+  if (editForm.sizes.length === 0) {
+    toast.push('Ukuran Wajib Dipilih', {
+      description: 'Pilih minimal 1 ukuran sebelum menyimpan.',
+      type: 'error',
+    })
+    return
+  }
+
   savingEdit.value = true
   try {
     await $fetch(`/api/items/${itemId}`, {
@@ -165,13 +219,14 @@ async function saveEdit(itemId: string) {
         pricePerDay: editForm.pricePerDay,
         deposit: editForm.deposit,
         status: editForm.status,
+        sizes: editForm.sizes,
         imageUrl: editForm.imageUrl,
       },
     })
     editingItemId.value = null
     await refreshCatalog()
     toast.push('Koleksi Diperbarui', {
-      description: 'Perubahan harga & status produk berhasil disimpan.',
+      description: 'Perubahan nama, ukuran, harga & status produk berhasil disimpan.',
       type: 'success',
     })
   }
@@ -434,9 +489,45 @@ async function handleItemCreated() {
                         <span class="line-clamp-1 max-w-[260px]">{{ item.name }}</span>
                         <ExternalLink class="h-3 w-3 shrink-0 text-[#A39C93]" />
                       </NuxtLink>
-                      <p class="mt-0.5 text-[11px] text-[#8A837A]">
+                      <p v-if="editingItemId !== item.id" class="mt-0.5 text-[11px] text-[#8A837A]">
                         {{ item.location }} &bull; Size {{ item.sizes.join(', ') }}
                       </p>
+                      <div v-else class="mt-2 space-y-1.5">
+                        <div class="flex flex-wrap items-center gap-1">
+                          <span class="mr-0.5 text-[10px] font-medium uppercase tracking-wider text-[#8A837A]">Size:</span>
+                          <button
+                            v-for="sz in getSizeOptionsForItem(item)"
+                            :key="sz"
+                            type="button"
+                            class="rounded border px-1.5 py-0.5 text-[10px] font-medium transition-colors"
+                            :class="
+                              editForm.sizes.includes(sz)
+                                ? 'border-[#556256] bg-[#556256] text-white'
+                                : 'border-[#E8E3DC] bg-[#FAF8F5] text-[#6B655E] hover:border-[#2B2A28]'
+                            "
+                            @click="toggleEditSize(sz)"
+                          >
+                            {{ sz }}
+                          </button>
+                        </div>
+                        <div class="flex items-center gap-1">
+                          <input
+                            v-model="editForm.customSize"
+                            type="text"
+                            maxlength="20"
+                            placeholder="Tambah size lain (mis. XS / 45)"
+                            class="w-40 rounded border border-[#E8E3DC] bg-[#FAF8F5] px-2 py-0.5 text-[10px] text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none"
+                            @keydown.enter.prevent="addCustomEditSize"
+                          >
+                          <button
+                            type="button"
+                            class="rounded border border-[#D7E0D5] bg-[#F3F5F2] px-2 py-0.5 text-[10px] font-medium text-[#556256] hover:bg-[#E5ECE4]"
+                            @click="addCustomEditSize"
+                          >
+                            + Tambah
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </td>

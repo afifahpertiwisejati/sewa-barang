@@ -15,6 +15,7 @@ export default defineEventHandler(async (event): Promise<RentalItem> => {
     deposit?: number
     location?: string
     status?: ItemStatus
+    sizes?: string[]
     imageUrl?: string
   }>(event)
 
@@ -37,6 +38,20 @@ export default defineEventHandler(async (event): Promise<RentalItem> => {
   }
   if (body?.status === 'Tersedia' || body?.status === 'Sedang Disewa') {
     item.status = body.status
+  }
+  if (Array.isArray(body?.sizes)) {
+    const cleanedSizes = Array.from(
+      new Set(
+        body.sizes
+          .filter((s): s is string => typeof s === 'string')
+          .map(s => s.trim())
+          .filter(s => s.length > 0 && s.length <= 24),
+      ),
+    )
+    if (cleanedSizes.length === 0) {
+      throw createError({ statusCode: 400, statusMessage: 'Pilih minimal 1 ukuran untuk produk ini.' })
+    }
+    item.sizes = cleanedSizes
   }
   if (typeof body?.imageUrl === 'string' && /^(https?:\/\/|\/images\/|\/uploads\/).+/i.test(body.imageUrl.trim())) {
     const newUrl = body.imageUrl.trim()
