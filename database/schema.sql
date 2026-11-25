@@ -104,3 +104,22 @@ CREATE TABLE IF NOT EXISTS `bookings` (
   KEY `idx_bookings_created_at` (`created_at`),
   CONSTRAINT `fk_bookings_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 4. Notifications Table (In-App Notifications for Admin & Penyewa)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `id` VARCHAR(64) NOT NULL,
+  `user_id` VARCHAR(64) NULL,
+  `recipient_role` ENUM('user', 'admin') NOT NULL DEFAULT 'user',
+  `type` VARCHAR(40) NOT NULL,
+  `title` VARCHAR(200) NOT NULL,
+  `message` TEXT NOT NULL,
+  `booking_id` VARCHAR(64) NULL,
+  `action_url` VARCHAR(255) NULL,
+  `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` VARCHAR(40) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_notifications_user` (`user_id`, `is_read`, `created_at`),
+  KEY `idx_notifications_role` (`recipient_role`, `is_read`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

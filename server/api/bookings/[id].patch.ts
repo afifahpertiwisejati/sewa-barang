@@ -7,7 +7,7 @@ import type {
   PaymentStatus,
 } from '#shared/types/rental'
 import { requireAuthUser } from '../../utils/auth'
-import { findBookingById, updateBooking } from '../../utils/db'
+import { createNotification, findBookingById, updateBooking } from '../../utils/db'
 
 export default defineEventHandler(async (event): Promise<BookingRecord> => {
   const user = await requireAuthUser(event)
@@ -36,6 +36,10 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
       statusMessage: 'Anda tidak memiliki izin mengubah transaksi ini.',
     })
   }
+
+  const prevStatus = booking.status
+  const prevPaymentStatus = booking.paymentStatus
+  const prevGuaranteeStatus = booking.guaranteeStatus
 
   // Update rental status (aktif / selesai / dibatalkan)
   if (body?.status !== undefined) {
@@ -119,5 +123,117 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
   }
 
   await updateBooking(booking)
+
+  const notifTasks: Promise<unknown>[] = []
+
+  // Status transitions
+  if (booking.status !== prevStatus) {
+    if (booking.status === 'selesai') {
+      if (user.role === 'admin' && booking.userId) {
+        notifTasks.push(
+          createNotification({
+            userId: booking.userId,
+            recipientRole: 'user',
+            type: 'booking_completed',
+            title: 'Penyewaan Selesai',
+            message: booking.deposit > 0 && booking.depositStatus !== 'dikembalikan'
+              ? `Sewa ${booking.itemName} (${booking.id}) telah diselesaikan oleh Admin. Anda dapat mengajukan pengembalian deposit Rp${booking.deposit.toLocaleString('id-ID')}.`
+              : `Sewa ${booking.itemName} (${booking.id}) telah selesai. Terima kasih telah menyewa di SewaIn+!`,
+            bookingId: booking.id,
+            actionUrl: '/dashboard',
+          }),
+        )
+      }
+      else if (user.role !== 'admin') {
+        notifTasks.push(
+          createNotification({
+            recipientRole: 'admin',
+            type: 'booking_completed',
+            title: 'Penyewa Menandai Sewa Selesai',
+            message: `${booking.renterName} menandai penyewaan ${booking.itemName} (${booking.id}) selesai. Cek kondisi busana & proses pengembalian deposit.`,
+            bookingId: booking.id,
+            actionUrl: '/admin',
+          }),
+        )
+      }
+    }
+    else if (booking.status === 'dibatalkan') {
+      if (user.role === 'admin' && booking.userId) {
+        notifTasks.push(
+          createNotification({
+            userId: booking.userId,
+            recipientRole: 'user',
+            type: 'booking_cancelled',
+            title: 'Pesanan Dibatalkan Admin',
+            message: `Pesanan ${booking.itemName} (${booking.id}) telah dibatalkan oleh Admin Butik.`,
+            bookingId: booking.id,
+            actionUrl: '/dashboard',
+          }),
+        )
+      }
+      else if (user.role !== 'admin') {
+        notifTasks.push(
+          createNotification({
+            recipientRole: 'admin',
+            type: 'booking_cancelled',
+            title: 'Pesanan Dibatalkan Penyewa',
+            message: `${booking.renterName} membatalkan pesanan ${booking.itemName} (${booking.id}).`,
+            bookingId: booking.id,
+            actionUrl: '/admin',
+          }),
+        )
+      }
+    }
+  }
+
+  // Admin manually verified payment (e.g. cash received)
+  if (booking.paymentStatus !== prevPaymentStatus && booking.paymentStatus === 'terverifikasi' && booking.userId) {
+    notifTasks.push(
+      createNotification({
+        userId: booking.userId,
+        recipientRole: 'user',
+        type: 'payment_confirmed',
+        title: 'Pembayaran Diterima & Terverifikasi',
+        message: `Admin Butik mengonfirmasi pembayaran untuk ${booking.itemName} (${booking.id}). Ref: ${booking.paymentReference || '-'}.`,
+        bookingId: booking.id,
+        actionUrl: '/dashboard',
+      }),
+    )
+  }
+
+  // Admin updated guarantee handover status
+  if (booking.guaranteeStatus !== prevGuaranteeStatus && booking.userId && booking.status !== 'selesai') {
+    const labelMap: Record<GuaranteeStatus, { title: string, desc: string }> = {
+      dititipkan: {
+        title: 'Jaminan Identitas Diterima',
+        desc: `Admin Butik telah menerima titipan jaminan identitas untuk pesanan ${booking.itemName} (${booking.id}).`,
+      },
+      dikembalikan: {
+        title: 'Jaminan Identitas Dikembalikan',
+        desc: `Jaminan identitas Anda untuk pesanan ${booking.itemName} (${booking.id}) telah dikembalikan.`,
+      },
+      menunggu_serah: {
+        title: 'Status Jaminan Diperbarui',
+        desc: `Status jaminan identitas untuk pesanan ${booking.itemName} (${booking.id}) menunggu penyerahan.`,
+      },
+    }
+    const info = labelMap[booking.guaranteeStatus]
+    notifTasks.push(
+      createNotification({
+        userId: booking.userId,
+        recipientRole: 'user',
+        type: 'guarantee_updated',
+        title: info.title,
+        message: info.desc,
+        bookingId: booking.id,
+        actionUrl: '/dashboard',
+      }),
+    )
+  }
+
+  if (notifTasks.length > 0) {
+    await Promise.allSettled(notifTasks)
+  }
+
   return booking
 })

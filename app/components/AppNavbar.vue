@@ -154,6 +154,8 @@ async function handleLogout() {
           </span>
         </NuxtLink>
 
+        <NotificationBell v-if="isLoggedIn" />
+
         <NuxtLink
           :to="isLoggedIn ? (isAdmin ? '/admin' : '/dashboard') : '/login'"
           class="relative rounded-full p-2 text-[#2B2A28] transition-colors hover:bg-[#EFECE7]"

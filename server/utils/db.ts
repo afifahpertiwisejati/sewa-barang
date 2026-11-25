@@ -14,6 +14,8 @@ import type {
   ItemOwner,
   ItemSpec,
   ItemStatus,
+  NotificationRecord,
+  NotificationType,
   PaymentMethod,
   PaymentStatus,
   RentalCategory,
@@ -101,6 +103,19 @@ interface BookingRow extends RowDataPacket {
   deposit_refund_note: string | null
   deposit_refunded_at: string | null
   notes: string | null
+  created_at: string
+}
+
+interface NotificationRow extends RowDataPacket {
+  id: string
+  user_id: string | null
+  recipient_role: UserRole
+  type: NotificationType
+  title: string
+  message: string
+  booking_id: string | null
+  action_url: string | null
+  is_read: number
   created_at: string
 }
 
@@ -245,6 +260,21 @@ function mapBookingRow(row: BookingRow): BookingRecord {
   }
 }
 
+function mapNotificationRow(row: NotificationRow): NotificationRecord {
+  return {
+    id: row.id,
+    ...(row.user_id ? { userId: row.user_id } : {}),
+    recipientRole: row.recipient_role,
+    type: row.type,
+    title: row.title,
+    message: row.message,
+    ...(row.booking_id ? { bookingId: row.booking_id } : {}),
+    ...(row.action_url ? { actionUrl: row.action_url } : {}),
+    isRead: Boolean(row.is_read),
+    createdAt: row.created_at,
+  }
+}
+
 let poolInstance: Pool | null = null
 let initPromise: Promise<Pool> | null = null
 
@@ -277,7 +307,8 @@ async function initializeSchemaAndSeed(): Promise<Pool> {
       `SELECT
         (SELECT COUNT(*) FROM users) AS users_cnt,
         (SELECT COUNT(*) FROM items) AS items_cnt,
-        (SELECT deposit_status FROM bookings LIMIT 1) AS dep_col`,
+        (SELECT deposit_status FROM bookings LIMIT 1) AS dep_col,
+        (SELECT COUNT(*) FROM notifications) AS notif_cnt`,
     )
     const usersCnt = Number(probeRows[0]?.users_cnt || 0)
     const itemsCnt = Number(probeRows[0]?.items_cnt || 0)
@@ -429,6 +460,24 @@ async function initializeSchemaAndSeed(): Promise<Pool> {
          deposit_refunded_at = COALESCE(deposit_refunded_at, created_at)
      WHERE status = 'selesai' AND deposit_status = 'ditahan' AND deposit_refunded_at IS NULL`,
   )
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id VARCHAR(64) NOT NULL,
+      user_id VARCHAR(64) NULL,
+      recipient_role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
+      type VARCHAR(40) NOT NULL,
+      title VARCHAR(200) NOT NULL,
+      message TEXT NOT NULL,
+      booking_id VARCHAR(64) NULL,
+      action_url VARCHAR(255) NULL,
+      is_read TINYINT(1) NOT NULL DEFAULT 0,
+      created_at VARCHAR(40) NOT NULL,
+      PRIMARY KEY (id),
+      KEY idx_notifications_user (user_id, is_read, created_at),
+      KEY idx_notifications_role (recipient_role, is_read, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `)
 
   // Step 4: Auto-seed / migrate from local JSON once if tables are empty
   const [userCountRows] = await pool.query<RowDataPacket[]>('SELECT COUNT(*) AS cnt FROM users')
@@ -855,6 +904,139 @@ export async function updateBooking(b: BookingRecord): Promise<void> {
   await syncItemStatusInDb(b.itemId)
 }
 
+// =============================================================================
+// Notifications Repository
+// =============================================================================
+export interface CreateNotificationInput {
+  userId?: string
+  recipientRole: UserRole
+  type: NotificationType
+  title: string
+  message: string
+  bookingId?: string
+  actionUrl?: string
+}
+
+export async function createNotification(input: CreateNotificationInput): Promise<NotificationRecord> {
+  const pool = await getDbPool()
+  const record: NotificationRecord = {
+    id: `NTF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+    ...(input.userId ? { userId: input.userId } : {}),
+    recipientRole: input.recipientRole,
+    type: input.type,
+    title: input.title.slice(0, 200),
+    message: input.message,
+    ...(input.bookingId ? { bookingId: input.bookingId } : {}),
+    ...(input.actionUrl ? { actionUrl: input.actionUrl } : {}),
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  }
+
+  await pool.execute(
+    `INSERT INTO notifications (
+       id, user_id, recipient_role, type, title, message, booking_id, action_url, is_read, created_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      record.id,
+      record.userId ?? null,
+      record.recipientRole,
+      record.type,
+      record.title,
+      record.message,
+      record.bookingId ?? null,
+      record.actionUrl ?? null,
+      0,
+      record.createdAt,
+    ],
+  )
+  return record
+}
+
+export async function listNotificationsForUser(
+  userId: string,
+  role: UserRole,
+  limit = 30,
+): Promise<{ notifications: NotificationRecord[], unreadCount: number }> {
+  const pool = await getDbPool()
+  const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)))
+
+  if (role === 'admin') {
+    const [rows] = await pool.query<NotificationRow[]>(
+      `SELECT * FROM notifications
+       WHERE recipient_role = 'admin' OR user_id = ?
+       ORDER BY created_at DESC
+       LIMIT ${safeLimit}`,
+      [userId],
+    )
+    const [cntRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT COUNT(*) AS cnt FROM notifications
+       WHERE (recipient_role = 'admin' OR user_id = ?) AND is_read = 0`,
+      [userId],
+    )
+    return {
+      notifications: rows.map(mapNotificationRow),
+      unreadCount: Number(cntRows[0]?.cnt || 0),
+    }
+  }
+
+  const [rows] = await pool.query<NotificationRow[]>(
+    `SELECT * FROM notifications
+     WHERE recipient_role = 'user' AND user_id = ?
+     ORDER BY created_at DESC
+     LIMIT ${safeLimit}`,
+    [userId],
+  )
+  const [cntRows] = await pool.execute<RowDataPacket[]>(
+    `SELECT COUNT(*) AS cnt FROM notifications
+     WHERE recipient_role = 'user' AND user_id = ? AND is_read = 0`,
+    [userId],
+  )
+  return {
+    notifications: rows.map(mapNotificationRow),
+    unreadCount: Number(cntRows[0]?.cnt || 0),
+  }
+}
+
+export async function markNotificationRead(
+  notificationId: string,
+  userId: string,
+  role: UserRole,
+): Promise<boolean> {
+  const pool = await getDbPool()
+  if (role === 'admin') {
+    const [result] = await pool.execute<mysql.ResultSetHeader>(
+      `UPDATE notifications SET is_read = 1
+       WHERE id = ? AND (recipient_role = 'admin' OR user_id = ?)`,
+      [notificationId, userId],
+    )
+    return result.affectedRows > 0
+  }
+  const [result] = await pool.execute<mysql.ResultSetHeader>(
+    `UPDATE notifications SET is_read = 1
+     WHERE id = ? AND recipient_role = 'user' AND user_id = ?`,
+    [notificationId, userId],
+  )
+  return result.affectedRows > 0
+}
+
+export async function markAllNotificationsRead(userId: string, role: UserRole): Promise<number> {
+  const pool = await getDbPool()
+  if (role === 'admin') {
+    const [result] = await pool.execute<mysql.ResultSetHeader>(
+      `UPDATE notifications SET is_read = 1
+       WHERE (recipient_role = 'admin' OR user_id = ?) AND is_read = 0`,
+      [userId],
+    )
+    return result.affectedRows
+  }
+  const [result] = await pool.execute<mysql.ResultSetHeader>(
+    `UPDATE notifications SET is_read = 1
+     WHERE recipient_role = 'user' AND user_id = ? AND is_read = 0`,
+    [userId],
+  )
+  return result.affectedRows
+}
+
 export async function getDbHealthInfo() {
   const pool = await getDbPool()
   const [metaRows] = await pool.query<RowDataPacket[]>('SELECT DATABASE() AS db_name, VERSION() AS db_version')
@@ -863,6 +1045,7 @@ export async function getDbHealthInfo() {
   const [uCnt] = await pool.query<RowDataPacket[]>('SELECT COUNT(*) AS cnt FROM users')
   const [iCnt] = await pool.query<RowDataPacket[]>('SELECT COUNT(*) AS cnt FROM items')
   const [bCnt] = await pool.query<RowDataPacket[]>('SELECT COUNT(*) AS cnt FROM bookings')
+  const [nCnt] = await pool.query<RowDataPacket[]>('SELECT COUNT(*) AS cnt FROM notifications')
 
   return {
     connected: true,
@@ -874,6 +1057,7 @@ export async function getDbHealthInfo() {
       users: Number(uCnt[0]?.cnt || 0),
       items: Number(iCnt[0]?.cnt || 0),
       bookings: Number(bCnt[0]?.cnt || 0),
+      notifications: Number(nCnt[0]?.cnt || 0),
     },
   }
 }

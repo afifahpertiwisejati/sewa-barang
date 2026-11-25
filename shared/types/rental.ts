@@ -233,4 +233,32 @@ export interface ItemsListResponse {
   maxCatalogPrice: number
 }
 
+export type NotificationType
+  = | 'booking_new'
+    | 'payment_confirmed'
+    | 'guarantee_updated'
+    | 'deposit_requested'
+    | 'deposit_refunded'
+    | 'booking_completed'
+    | 'booking_cancelled'
+    | 'system'
+
+export interface NotificationRecord {
+  id: string
+  userId?: string
+  recipientRole: 'user' | 'admin'
+  type: NotificationType
+  title: string
+  message: string
+  bookingId?: string
+  actionUrl?: string
+  isRead: boolean
+  createdAt: string
+}
+
+export interface NotificationsListResponse {
+  notifications: NotificationRecord[]
+  unreadCount: number
+}
+
 export const DELIVERY_FEE_COURIER = 15000

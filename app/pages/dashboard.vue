@@ -18,6 +18,7 @@ useHead({
 
 const { user, isAdmin } = useAuth()
 const { formatRupiah } = useFormatters()
+const { fetchNotifications } = useNotifications()
 
 const {
   data: bookings,
@@ -51,7 +52,10 @@ const stats = computed(() => {
 })
 
 async function handleBookingUpdated() {
-  await refreshBookings()
+  await Promise.all([
+    refreshBookings(),
+    fetchNotifications({ silent: true }),
+  ])
 }
 </script>
 
@@ -90,6 +94,8 @@ async function handleBookingUpdated() {
         </NuxtLink>
       </div>
     </div>
+
+    <NotificationBanner />
 
     <!-- Summary KPI Cards -->
     <div class="mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-3">

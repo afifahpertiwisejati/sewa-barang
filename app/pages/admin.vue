@@ -28,6 +28,7 @@ const route = useRoute()
 const router = useRouter()
 const { user } = useAuth()
 const { formatRupiah } = useFormatters()
+const { fetchNotifications } = useNotifications()
 const toast = useToast()
 
 type AdminTab = 'orders' | 'catalog' | 'create'
@@ -205,7 +206,11 @@ async function deleteItem(item: RentalItem) {
 }
 
 async function handleBookingUpdated() {
-  await Promise.all([refreshBookings(), refreshCatalog()])
+  await Promise.all([
+    refreshBookings(),
+    refreshCatalog(),
+    fetchNotifications({ silent: true }),
+  ])
 }
 
 async function handleItemCreated() {
@@ -247,6 +252,8 @@ async function handleItemCreated() {
         </NuxtLink>
       </div>
     </div>
+
+    <NotificationBanner />
 
     <!-- Admin KPI Cards -->
     <div class="mt-6 grid grid-cols-2 gap-3.5 lg:grid-cols-4">

@@ -4,7 +4,7 @@ import {
   type DepositRefundMethod,
 } from '#shared/types/rental'
 import { requireAuthUser } from '../../../utils/auth'
-import { findBookingById, updateBooking } from '../../../utils/db'
+import { createNotification, findBookingById, updateBooking } from '../../../utils/db'
 
 function generateRefundRef(): string {
   const now = new Date()
@@ -93,6 +93,17 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     }
 
     await updateBooking(booking)
+
+    const methodLabel = DEPOSIT_REFUND_METHODS[method]?.label || method
+    await createNotification({
+      recipientRole: 'admin',
+      type: 'deposit_requested',
+      title: 'Pengajuan Pengembalian Deposit',
+      message: `${booking.renterName} mengajukan pencairan deposit Rp${booking.deposit.toLocaleString('id-ID')} untuk ${booking.itemName} (${booking.id}) via ${methodLabel}.`,
+      bookingId: booking.id,
+      actionUrl: '/admin',
+    }).catch(() => {})
+
     return booking
   }
 
@@ -140,5 +151,21 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
   }
 
   await updateBooking(booking)
+
+  if (booking.userId) {
+    const methodLabel = DEPOSIT_REFUND_METHODS[method]?.label || method
+    await createNotification({
+      userId: booking.userId,
+      recipientRole: 'user',
+      type: 'deposit_refunded',
+      title: deduction > 0 ? 'Deposit Dikembalikan (Dengan Potongan)' : 'Deposit Telah Dikembalikan 100%',
+      message: deduction > 0
+        ? `Deposit Rp${refundAmount.toLocaleString('id-ID')} (potongan Rp${deduction.toLocaleString('id-ID')}) untuk ${booking.itemName} (${booking.id}) telah dicairkan via ${methodLabel}. Ref: ${booking.depositRefundReference}.`
+        : `Deposit Rp${refundAmount.toLocaleString('id-ID')} untuk ${booking.itemName} (${booking.id}) telah dicairkan penuh via ${methodLabel}. Ref: ${booking.depositRefundReference}.`,
+      bookingId: booking.id,
+      actionUrl: '/dashboard',
+    }).catch(() => {})
+  }
+
   return booking
 })

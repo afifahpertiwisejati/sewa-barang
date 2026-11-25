@@ -10,6 +10,7 @@ import {
 import { requireAuthUser } from '../../utils/auth'
 import {
   countAllBookings,
+  createNotification,
   findItemById,
   insertBooking,
   listActiveBookingsByItemId,
@@ -172,6 +173,29 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
   }
 
   await insertBooking(booking)
+
+  const totalFmt = `Rp${booking.totalPrice.toLocaleString('id-ID')}`
+  await Promise.allSettled([
+    createNotification({
+      recipientRole: 'admin',
+      type: 'booking_new',
+      title: 'Pesanan Baru Masuk',
+      message: `${booking.renterName} memesan ${booking.itemName} (${booking.startDate} s/d ${booking.endDate}) • Total ${totalFmt}.`,
+      bookingId: booking.id,
+      actionUrl: '/admin',
+    }),
+    createNotification({
+      userId: user.id,
+      recipientRole: 'user',
+      type: 'booking_new',
+      title: 'Booking Berhasil Dibuat',
+      message: paymentMethod === 'cash'
+        ? `Pesanan ${booking.itemName} (${booking.id}) tercatat. Siapkan pembayaran tunai ${totalFmt} & jaminan identitas saat serah-terima.`
+        : `Pesanan ${booking.itemName} (${booking.id}) tercatat (${totalFmt}). Silakan selesaikan pembayaran agar segera terverifikasi.`,
+      bookingId: booking.id,
+      actionUrl: '/dashboard',
+    }),
+  ])
 
   setResponseStatus(event, 201)
   return booking

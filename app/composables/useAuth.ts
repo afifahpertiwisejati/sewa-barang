@@ -50,6 +50,11 @@ export function useAuth() {
     await $fetch('/api/auth/logout', { method: 'POST' })
     user.value = null
     loaded.value = true
+    useState('sewain-notifications').value = []
+    useState('sewain-notifications-unread').value = 0
+    useState('sewain-notifications-init').value = false
+    useState('sewain-notifications-seen').value = []
+    useState('sewain-notifications-owner').value = ''
     await refreshNuxtData('nav-bookings')
   }
 

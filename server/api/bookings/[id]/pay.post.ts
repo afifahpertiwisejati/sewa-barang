@@ -1,6 +1,6 @@
-import type { BookingRecord, PaymentMethod } from '#shared/types/rental'
+import { PAYMENT_ACCOUNTS, type BookingRecord, type PaymentMethod } from '#shared/types/rental'
 import { requireAuthUser } from '../../../utils/auth'
-import { findBookingById, updateBooking } from '../../../utils/db'
+import { createNotification, findBookingById, updateBooking } from '../../../utils/db'
 
 function generatePaymentRef(prefix: string): string {
   const now = new Date()
@@ -67,5 +67,68 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
   }
 
   await updateBooking(booking)
+
+  const methodLabel = PAYMENT_ACCOUNTS[booking.paymentMethod]?.label || booking.paymentMethod
+  const notifTasks: Promise<unknown>[] = []
+
+  if (booking.paymentStatus === 'terverifikasi') {
+    if (user.role === 'admin') {
+      if (booking.userId) {
+        notifTasks.push(
+          createNotification({
+            userId: booking.userId,
+            recipientRole: 'user',
+            type: 'payment_confirmed',
+            title: 'Pembayaran Dikonfirmasi Admin',
+            message: `Pembayaran ${methodLabel} untuk ${booking.itemName} (${booking.id}) telah terverifikasi. Ref: ${booking.paymentReference}.`,
+            bookingId: booking.id,
+            actionUrl: '/dashboard',
+          }),
+        )
+      }
+    }
+    else {
+      notifTasks.push(
+        createNotification({
+          recipientRole: 'admin',
+          type: 'payment_confirmed',
+          title: 'Pembayaran Penyewa Terverifikasi',
+          message: `${booking.renterName} telah membayar ${booking.itemName} (${booking.id}) sebesar Rp${booking.totalPrice.toLocaleString('id-ID')} via ${methodLabel}.`,
+          bookingId: booking.id,
+          actionUrl: '/admin',
+        }),
+      )
+      if (booking.userId) {
+        notifTasks.push(
+          createNotification({
+            userId: booking.userId,
+            recipientRole: 'user',
+            type: 'payment_confirmed',
+            title: 'Pembayaran Berhasil Terverifikasi',
+            message: `Pembayaran ${booking.itemName} (${booking.id}) via ${methodLabel} berhasil. Ref: ${booking.paymentReference}.`,
+            bookingId: booking.id,
+            actionUrl: '/dashboard',
+          }),
+        )
+      }
+    }
+  }
+  else if (booking.paymentStatus === 'bayar_ditempat' && user.role !== 'admin') {
+    notifTasks.push(
+      createNotification({
+        recipientRole: 'admin',
+        type: 'payment_confirmed',
+        title: 'Metode Bayar Di Tempat Dipilih',
+        message: `${booking.renterName} memilih bayar tunai di tempat untuk ${booking.itemName} (${booking.id}).`,
+        bookingId: booking.id,
+        actionUrl: '/admin',
+      }),
+    )
+  }
+
+  if (notifTasks.length > 0) {
+    await Promise.allSettled(notifTasks)
+  }
+
   return booking
 })

@@ -1,6 +1,6 @@
 import type { AuthResponse, RegisterPayload, StoredUser } from '#shared/types/auth'
 import { hashPassword, setAuthSession, toPublicUser } from '../../utils/auth'
-import { findUserByEmail, insertUser } from '../../utils/db'
+import { createNotification, findUserByEmail, insertUser } from '../../utils/db'
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -49,6 +49,25 @@ export default defineEventHandler(async (event): Promise<AuthResponse> => {
   }
 
   await insertUser(newUser)
+
+  await Promise.allSettled([
+    createNotification({
+      recipientRole: 'admin',
+      type: 'system',
+      title: 'Penyewa Baru Terdaftar',
+      message: `${newUser.name} (${newUser.email} • ${newUser.phone}) baru saja mendaftar sebagai penyewa di SewaIn+.`,
+      actionUrl: '/admin',
+    }),
+    createNotification({
+      userId: newUser.id,
+      recipientRole: 'user',
+      type: 'system',
+      title: 'Selamat Datang di SewaIn+',
+      message: `Halo ${newUser.name}! Akun penyewa Anda sudah aktif. Silakan pilih kebaya, dress sopan, jas, atau sepatu favorit untuk acara Anda.`,
+      actionUrl: '/#katalog',
+    }),
+  ])
+
   setAuthSession(event, newUser.id)
   setResponseStatus(event, 201)
 
