@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, Loader2, Sparkles } from 'lucide-vue-next'
+import { ArrowRight, Loader2, Lock, ShieldCheck, Sparkles } from 'lucide-vue-next'
 
 useHead({
   title: 'Masuk & Daftar — Seruni Atelier',
@@ -10,12 +10,21 @@ const router = useRouter()
 const { user, login, register } = useAuth()
 const toast = useToast()
 
-const mode = ref<'login' | 'register'>('login')
+const initialMode: 'login' | 'register' | 'admin'
+  = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/admin')
+    ? 'admin'
+    : 'login'
+
+const mode = ref<'login' | 'register' | 'admin'>(initialMode)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 
 const loginForm = reactive({
   email: '',
+  password: '',
+})
+
+const adminForm = reactive({
   password: '',
 })
 
@@ -72,6 +81,34 @@ async function handleLoginSubmit(customEmail?: string, customPassword?: string) 
         || fetchErr?.statusMessage
         || fetchErr?.message
         || 'Email atau kata sandi salah.'
+  }
+  finally {
+    isSubmitting.value = false
+  }
+}
+
+async function handleAdminLoginSubmit() {
+  errorMessage.value = ''
+  const password = adminForm.password.trim()
+  if (!password) {
+    errorMessage.value = 'Mohon masukkan kata sandi admin.'
+    return
+  }
+
+  isSubmitting.value = true
+  try {
+    const loggedInUser = await login('admin@seruni.id', password)
+    if (!loggedInUser) throw new Error('Gagal masuk.')
+
+    toast.push(`Selamat datang, ${loggedInUser.name}!`, {
+      description: 'Anda masuk ke Panel Admin Seruni Atelier.',
+      type: 'success',
+    })
+
+    await router.push('/admin')
+  }
+  catch {
+    errorMessage.value = 'Kata sandi admin salah. Akses ini khusus untuk Admin Butik.'
   }
   finally {
     isSubmitting.value = false
@@ -142,14 +179,14 @@ async function handleRegisterSubmit() {
       <!-- Right Auth Form Panel -->
       <div class="p-6 sm:p-8 md:col-span-7 lg:p-10">
         <!-- Mode Switcher -->
-        <div class="flex gap-6 border-b border-[#EFECE7]">
+        <div class="flex flex-wrap gap-5 border-b border-[#EFECE7] sm:gap-6">
           <button
             type="button"
             class="border-b-2 pb-3 text-sm font-medium transition-colors"
             :class="mode === 'login' ? 'border-[#2B2A28] text-[#2B2A28]' : 'border-transparent text-[#8A837A] hover:text-[#2B2A28]'"
             @click="mode = 'login'; errorMessage = ''"
           >
-            Masuk Akun
+            Masuk Pelanggan
           </button>
           <button
             type="button"
@@ -157,7 +194,16 @@ async function handleRegisterSubmit() {
             :class="mode === 'register' ? 'border-[#2B2A28] text-[#2B2A28]' : 'border-transparent text-[#8A837A] hover:text-[#2B2A28]'"
             @click="mode = 'register'; errorMessage = ''"
           >
-            Daftar Penyewa Baru
+            Daftar Baru
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 border-b-2 pb-3 text-sm font-medium transition-colors"
+            :class="mode === 'admin' ? 'border-[#556256] text-[#556256]' : 'border-transparent text-[#8A837A] hover:text-[#556256]'"
+            @click="mode = 'admin'; errorMessage = ''"
+          >
+            <ShieldCheck class="h-4 w-4" />
+            Admin
           </button>
         </div>
 
@@ -210,7 +256,7 @@ async function handleRegisterSubmit() {
         </form>
 
         <!-- Register Form -->
-        <form v-else class="mt-6 space-y-4" @submit.prevent="handleRegisterSubmit">
+        <form v-else-if="mode === 'register'" class="mt-6 space-y-4" @submit.prevent="handleRegisterSubmit">
           <div>
             <label for="reg-name" class="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-[#6B655E]">
               Nama Lengkap
@@ -282,13 +328,58 @@ async function handleRegisterSubmit() {
             class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#2B2A28] px-5 py-3 text-xs font-medium tracking-wide text-white transition-all hover:bg-[#3F3D39] disabled:opacity-60"
           >
             <Loader2 v-if="isSubmitting" class="h-4 w-4 animate-spin" />
-            <span>{{ isSubmitting ? 'Mendaftarkan...' : 'Buat Akun Penyewa' }}</span>
+            <span>{{ isSubmitting ? 'Mendaftarkan...' : 'Buat Akun Pelanggan' }}</span>
+          </button>
+        </form>
+
+        <!-- Admin Secret Password Form -->
+        <form v-else class="mt-6 space-y-4" @submit.prevent="handleAdminLoginSubmit">
+          <div class="rounded-xl border border-[#D7E0D5] bg-[#F4F7F3] p-3.5 text-xs text-[#4A574B]">
+            <div class="flex items-center gap-2 font-semibold text-[#2B2A28]">
+              <Lock class="h-3.5 w-3.5 text-[#556256]" />
+              Akses Khusus Admin Butik
+            </div>
+            <p class="mt-1 text-[11px] leading-relaxed text-[#5C685D]">
+              Masukkan kata sandi rahasia admin untuk mengelola katalog, pesanan masuk, dan pengembalian deposit.
+            </p>
+          </div>
+
+          <div>
+            <label for="admin-password" class="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-[#6B655E]">
+              Kata Sandi Admin
+            </label>
+            <input
+              id="admin-password"
+              v-model="adminForm.password"
+              type="password"
+              required
+              autocomplete="current-password"
+              placeholder="Masukkan kata sandi rahasia admin"
+              class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3.5 py-2.5 text-sm text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
+            >
+          </div>
+
+          <p
+            v-if="errorMessage"
+            class="rounded-lg border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-700"
+          >
+            {{ errorMessage }}
+          </p>
+
+          <button
+            type="submit"
+            :disabled="isSubmitting"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#556256] px-5 py-3 text-xs font-medium tracking-wide text-white transition-all hover:bg-[#455146] disabled:opacity-60"
+          >
+            <Loader2 v-if="isSubmitting" class="h-4 w-4 animate-spin" />
+            <ShieldCheck v-else class="h-4 w-4" />
+            <span>{{ isSubmitting ? 'Memverifikasi...' : 'Masuk Panel Admin' }}</span>
           </button>
         </form>
 
         <div class="mt-6 border-t border-[#EFECE7] pt-5 text-center text-xs text-[#8A837A]">
           <template v-if="mode === 'login'">
-            Belum punya akun penyewa?
+            Belum punya akun pelanggan?
             <button
               type="button"
               class="font-semibold text-[#556256] underline-offset-2 hover:underline"
@@ -297,7 +388,7 @@ async function handleRegisterSubmit() {
               Daftar sekarang
             </button>
           </template>
-          <template v-else>
+          <template v-else-if="mode === 'register'">
             Sudah memiliki akun?
             <button
               type="button"
@@ -305,6 +396,16 @@ async function handleRegisterSubmit() {
               @click="mode = 'login'; errorMessage = ''"
             >
               Masuk di sini
+            </button>
+          </template>
+          <template v-else>
+            Ingin menyewa busana sebagai pelanggan?
+            <button
+              type="button"
+              class="font-semibold text-[#556256] underline-offset-2 hover:underline"
+              @click="mode = 'login'; errorMessage = ''"
+            >
+              Masuk / Daftar Pelanggan
             </button>
           </template>
         </div>
