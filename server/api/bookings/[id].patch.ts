@@ -3,6 +3,7 @@ import type {
   BookingStatus,
   GuaranteeStatus,
   GuaranteeType,
+  HandoverStatus,
   PaymentMethod,
   PaymentStatus,
 } from '#shared/types/rental'
@@ -19,6 +20,8 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     guaranteeType?: GuaranteeType
     guaranteeNumber?: string
     guaranteeStatus?: GuaranteeStatus
+    handoverStatus?: HandoverStatus
+    handoverRecipient?: string
   }>(event)
 
   if (!id) {
@@ -40,6 +43,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
   const prevStatus = booking.status
   const prevPaymentStatus = booking.paymentStatus
   const prevGuaranteeStatus = booking.guaranteeStatus
+  const prevHandoverStatus = booking.handoverStatus || 'belum_diterima'
 
   // Update rental status (aktif / selesai / dibatalkan)
   if (body?.status !== undefined) {
@@ -120,6 +124,32 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
       throw createError({ statusCode: 400, statusMessage: 'Status jaminan tidak valid.' })
     }
     booking.guaranteeStatus = body.guaranteeStatus
+  }
+
+  // Confirm recipient / handover of rented item (Admin only)
+  if (body?.handoverStatus !== undefined) {
+    if (user.role !== 'admin') {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'Hanya Admin Butik yang dapat mengonfirmasi penerima busana.',
+      })
+    }
+    const allowedHandover: HandoverStatus[] = ['belum_diterima', 'diterima']
+    if (!allowedHandover.includes(body.handoverStatus)) {
+      throw createError({ statusCode: 400, statusMessage: 'Status penerimaan tidak valid.' })
+    }
+    booking.handoverStatus = body.handoverStatus
+    if (body.handoverStatus === 'diterima') {
+      const recipient = typeof body.handoverRecipient === 'string' && body.handoverRecipient.trim()
+        ? body.handoverRecipient.trim().slice(0, 150)
+        : booking.renterName
+      booking.handoverRecipient = recipient
+      booking.handoverConfirmedAt = new Date().toISOString()
+    }
+    else {
+      booking.handoverRecipient = undefined
+      booking.handoverConfirmedAt = undefined
+    }
   }
 
   await updateBooking(booking)
@@ -225,6 +255,21 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
         type: 'guarantee_updated',
         title: info.title,
         message: info.desc,
+        bookingId: booking.id,
+        actionUrl: '/dashboard',
+      }),
+    )
+  }
+
+  // Admin confirmed handover recipient
+  if ((booking.handoverStatus || 'belum_diterima') !== prevHandoverStatus && booking.handoverStatus === 'diterima' && booking.userId) {
+    notifTasks.push(
+      createNotification({
+        userId: booking.userId,
+        recipientRole: 'user',
+        type: 'system',
+        title: 'Penerimaan Busana Dikonfirmasi',
+        message: `Admin Butik mencatat busana ${booking.itemName} (${booking.id}) telah diterima oleh ${booking.handoverRecipient || booking.renterName}.`,
         bookingId: booking.id,
         actionUrl: '/dashboard',
       }),

@@ -8,6 +8,7 @@ import {
   IdCard,
   Loader2,
   MapPin,
+  PackageCheck,
   PackageX,
   ReceiptText,
   RotateCcw,
@@ -15,6 +16,7 @@ import {
   ShieldCheck,
   Store,
   Truck,
+  X,
   XCircle,
 } from 'lucide-vue-next'
 import {
@@ -45,6 +47,60 @@ const statusFilter = ref<'semua' | BookingStatus | 'refund_pending'>('semua')
 const updatingId = ref<string | null>(null)
 const activeModalBooking = ref<BookingRecord | null>(null)
 const activeDepositModalBooking = ref<BookingRecord | null>(null)
+const activeHandoverBooking = ref<BookingRecord | null>(null)
+const handoverRecipientInput = ref('')
+const confirmingHandover = ref(false)
+
+function openHandoverModal(booking: BookingRecord) {
+  activeHandoverBooking.value = booking
+  handoverRecipientInput.value = booking.handoverRecipient || booking.renterName
+}
+
+function formatShortTime(iso?: string) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+async function submitHandoverConfirm() {
+  if (!activeHandoverBooking.value) return
+  const recipient = handoverRecipientInput.value.trim()
+  if (recipient.length < 2) {
+    toast.push('Nama Penerima Wajib Diisi', {
+      description: 'Masukkan nama penerima busana minimal 2 karakter.',
+      type: 'error',
+    })
+    return
+  }
+
+  confirmingHandover.value = true
+  try {
+    await $fetch<BookingRecord>(`/api/bookings/${activeHandoverBooking.value.id}`, {
+      method: 'PATCH',
+      body: {
+        handoverStatus: 'diterima',
+        handoverRecipient: recipient,
+      },
+    })
+    const bookingId = activeHandoverBooking.value.id
+    activeHandoverBooking.value = null
+    emit('updated')
+    toast.push('Penerima Dikonfirmasi!', {
+      description: `Busana untuk transaksi ${bookingId} tercatat diterima oleh ${recipient}.`,
+      type: 'success',
+    })
+  }
+  catch {
+    toast.push('Gagal Mengonfirmasi Penerima', { type: 'error' })
+  }
+  finally {
+    confirmingHandover.value = false
+  }
+}
 
 const filteredBookings = computed(() => {
   if (statusFilter.value === 'semua') return props.bookings
@@ -422,6 +478,31 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
                 </span>
               </div>
 
+              <!-- Handover / Recipient Confirmation Row -->
+              <div v-if="booking.status !== 'dibatalkan'" class="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#6B655E]">
+                <span class="inline-flex items-center gap-1">
+                  <PackageCheck class="h-3.5 w-3.5 text-[#556256]" />
+                  Penerima:
+                  <strong v-if="booking.handoverStatus === 'diterima'" class="font-medium text-[#2B2A28]">
+                    {{ booking.handoverRecipient || booking.renterName }}
+                  </strong>
+                  <span v-else class="text-[#8A837A]">Belum dikonfirmasi</span>
+                  <span v-if="booking.handoverStatus === 'diterima' && booking.handoverConfirmedAt" class="text-[11px] text-[#8A837A]">
+                    ({{ formatShortTime(booking.handoverConfirmedAt) }})
+                  </span>
+                </span>
+                <span
+                  class="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                  :class="
+                    booking.handoverStatus === 'diterima'
+                      ? 'bg-[#E3E8E2] text-[#384239]'
+                      : 'bg-[#F6E9D8] text-[#8C5E2A]'
+                  "
+                >
+                  {{ booking.handoverStatus === 'diterima' ? 'Sudah Diterima' : 'Menunggu Penerima' }}
+                </span>
+              </div>
+
               <!-- Deposit Refund Status Row -->
               <div v-if="booking.deposit > 0 && booking.status !== 'dibatalkan'" class="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#6B655E]">
                 <span class="inline-flex items-center gap-1">
@@ -488,6 +569,23 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
                 >
                   <Banknote class="h-3.5 w-3.5" />
                   Konfirmasi Terima Cash
+                </button>
+
+                <!-- Admin confirm item received by recipient -->
+                <button
+                  v-if="isAdmin && booking.status === 'aktif'"
+                  type="button"
+                  :disabled="updatingId === booking.id"
+                  class="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-60"
+                  :class="
+                    booking.handoverStatus === 'diterima'
+                      ? 'border border-[#C7D1C5] bg-[#F3F5F2] text-[#384239] hover:bg-[#E3E8E2]'
+                      : 'bg-[#2B2A28] text-white hover:bg-[#3F3D39]'
+                  "
+                  @click="openHandoverModal(booking)"
+                >
+                  <PackageCheck class="h-3.5 w-3.5" />
+                  {{ booking.handoverStatus === 'diterima' ? 'Ubah Info Penerima' : 'Konfirmasi Penerima' }}
                 </button>
 
                 <!-- Admin guarantee handover controls -->
@@ -638,5 +736,86 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
       @close="activeDepositModalBooking = null"
       @updated="handleDepositUpdated"
     />
+
+    <!-- Admin Recipient / Handover Confirmation Modal -->
+    <Teleport to="body">
+      <div
+        v-if="activeHandoverBooking"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-[#2B2A28]/55 p-4 backdrop-blur-xs"
+        @click.self="activeHandoverBooking = null"
+      >
+        <div class="w-full max-w-md overflow-hidden rounded-2xl border border-[#E8E3DC] bg-white shadow-xl">
+          <div class="flex items-center justify-between border-b border-[#EFECE7] px-5 py-4">
+            <div class="flex items-center gap-2.5">
+              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#F3F5F2] text-[#556256]">
+                <PackageCheck class="h-4 w-4" />
+              </div>
+              <div>
+                <h3 class="font-serif text-base font-medium text-[#2B2A28]">
+                  Konfirmasi Penerima Busana
+                </h3>
+                <p class="font-mono text-[11px] text-[#8A837A]">
+                  {{ activeHandoverBooking.id }} &bull; {{ activeHandoverBooking.deliveryOption === 'kurir_antar' ? 'Kurir Antar' : 'Ambil Sendiri' }}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="rounded-full p-1.5 text-[#8A837A] hover:bg-[#FAF8F5] hover:text-[#2B2A28]"
+              @click="activeHandoverBooking = null"
+            >
+              <X class="h-4 w-4" />
+            </button>
+          </div>
+
+          <form class="space-y-4 p-5" @submit.prevent="submitHandoverConfirm">
+            <div class="rounded-xl border border-[#E8E3DC] bg-[#FAF8F5] p-3 text-xs">
+              <p class="font-semibold text-[#2B2A28]">
+                {{ activeHandoverBooking.itemName }}
+              </p>
+              <p class="mt-0.5 text-[11px] text-[#6B655E]">
+                Penyewa: {{ activeHandoverBooking.renterName }} ({{ activeHandoverBooking.renterPhone }})
+              </p>
+            </div>
+
+            <div>
+              <label for="handover-recipient" class="mb-1 block text-[11px] font-medium uppercase tracking-wider text-[#6B655E]">
+                Nama Penerima Busana <span class="text-rose-500">*</span>
+              </label>
+              <input
+                id="handover-recipient"
+                v-model="handoverRecipientInput"
+                type="text"
+                required
+                placeholder="Contoh: Salsabila Putri / Ibu Rina (perwakilan)"
+                class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3.5 py-2.5 text-xs text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
+              >
+              <p class="mt-1 text-[10.5px] text-[#8A837A]">
+                Otomatis terisi nama penyewa. Ubah jika busana diambil atau diterima oleh perwakilan.
+              </p>
+            </div>
+
+            <div class="flex gap-2 pt-1">
+              <button
+                type="submit"
+                :disabled="confirmingHandover"
+                class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#556256] px-4 py-2.5 text-xs font-medium text-white hover:bg-[#455146] disabled:opacity-60"
+              >
+                <Loader2 v-if="confirmingHandover" class="h-4 w-4 animate-spin" />
+                <CheckCircle2 v-else class="h-4 w-4" />
+                <span>Konfirmasi Sudah Diterima</span>
+              </button>
+              <button
+                type="button"
+                class="rounded-md border border-[#E8E3DC] bg-white px-4 py-2.5 text-xs font-medium text-[#6B655E] hover:border-[#2B2A28]"
+                @click="activeHandoverBooking = null"
+              >
+                Batal
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

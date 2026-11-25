@@ -19,6 +19,7 @@ export type PaymentMethod = 'cash' | 'transfer_bca' | 'transfer_mandiri' | 'qris
 export type PaymentStatus = 'belum_bayar' | 'bayar_ditempat' | 'terverifikasi'
 export type GuaranteeType = 'ktp' | 'sim' | 'ktm' | 'kk_paspor'
 export type GuaranteeStatus = 'menunggu_serah' | 'dititipkan' | 'dikembalikan'
+export type HandoverStatus = 'belum_diterima' | 'diterima'
 export type DepositStatus = 'ditahan' | 'menunggu_pengembalian' | 'dikembalikan' | 'dipotong'
 export type DepositRefundMethod = 'transfer_bca' | 'transfer_mandiri' | 'transfer_bri' | 'gopay' | 'dana' | 'ovo' | 'cash'
 export type SortOption = 'newest' | 'price_asc' | 'rating_desc'
@@ -105,6 +106,9 @@ export interface BookingRecord {
   guaranteeType: GuaranteeType
   guaranteeNumber?: string
   guaranteeStatus: GuaranteeStatus
+  handoverStatus?: HandoverStatus
+  handoverRecipient?: string
+  handoverConfirmedAt?: string
   depositStatus?: DepositStatus
   depositRefundMethod?: DepositRefundMethod
   depositRefundAccount?: string
