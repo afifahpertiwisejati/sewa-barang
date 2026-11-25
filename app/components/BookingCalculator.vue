@@ -205,14 +205,23 @@ async function handleBookingSubmit() {
     await refreshNuxtData('nav-bookings')
     emit('booked', booking)
 
-    if (booking.paymentMethod === 'qris') {
-      // Instant 1-click QRIS direct payment (no scanning needed!)
+    if (booking.paymentMethod === 'cash') {
+      toast.push('Pengajuan Sewa Berhasil!', {
+        description: `Kode ${booking.id} tercatat. Pembayaran Cash & penyerahan jaminan saat ambil busana.`,
+        type: 'success',
+      })
+    }
+    else {
+      // Instant 1-click QRIS direct payment for all transfer / e-wallet / QRIS methods (no scanning needed!)
       await new Promise(resolve => setTimeout(resolve, 400))
+      const channelLabel = booking.paymentMethod === 'qris'
+        ? selectedQrisChannel.value
+        : `QRIS ${PAYMENT_ACCOUNTS[booking.paymentMethod]?.label || 'Transfer'}`
       const paidBooking = await $fetch<BookingRecord>(`/api/bookings/${booking.id}/pay`, {
         method: 'POST',
         body: {
-          paymentMethod: 'qris',
-          paymentChannel: selectedQrisChannel.value,
+          paymentMethod: booking.paymentMethod,
+          paymentChannel: channelLabel,
         },
       })
       createdBooking.value = paidBooking
@@ -221,19 +230,9 @@ async function handleBookingSubmit() {
       emit('booked', paidBooking)
 
       toast.push('Pembayaran QRIS Berhasil!', {
-        description: `Lunas via QRIS (${selectedQrisChannel.value}) — Ref ${paidBooking.paymentReference}.`,
+        description: `Lunas via ${channelLabel} — Ref ${paidBooking.paymentReference}.`,
         type: 'success',
       })
-    }
-    else if (booking.paymentMethod === 'cash') {
-      toast.push('Pengajuan Sewa Berhasil!', {
-        description: `Kode ${booking.id} tercatat. Pembayaran Cash & penyerahan jaminan saat ambil busana.`,
-        type: 'success',
-      })
-    }
-    else {
-      // Open direct payment modal for bank transfer / GoPay
-      activeModalBooking.value = booking
     }
   }
   catch (err: unknown) {
@@ -696,10 +695,10 @@ function handlePaid(updated: BookingRecord) {
           </div>
         </div>
 
-        <!-- Transfer / E-Wallet Account Info -->
+        <!-- Transfer / E-Wallet Account Info + Instant Fake QRIS (Appears after selecting transfer method) -->
         <div
           v-else-if="activePaymentInfo"
-          class="space-y-2"
+          class="space-y-2.5"
         >
           <div class="flex items-center justify-between gap-2 rounded-xl border border-[#E8E3DC] bg-[#FAF8F5] px-3.5 py-2.5">
             <div class="min-w-0">
@@ -720,9 +719,16 @@ function handlePaid(updated: BookingRecord) {
               {{ copiedAccount ? 'Tersalin' : 'Salin' }}
             </button>
           </div>
-          <p class="text-[10px] text-[#8A837A]">
-            Pembayaran langsung dikonfirmasi otomatis di layar transaksi berikutnya — tanpa perlu upload foto.
-          </p>
+
+          <QrisCard
+            compact
+            :amount="totalPrice"
+            :reference-id="props.item.id.toUpperCase().slice(0, 12)"
+            :title="`SERUNI ATELIER • ${activePaymentInfo.label}`"
+            :subtitle="activePaymentInfo.account"
+            badge-text="Langsung Bayar (Tanpa Scan)"
+            hint-text="Tidak perlu scan kamera — klik tombol bayar di bawah untuk langsung lunas via QRIS."
+          />
         </div>
       </div>
 
@@ -785,16 +791,14 @@ function handlePaid(updated: BookingRecord) {
         <span>
           {{
             isSubmitting
-              ? paymentMethod === 'qris'
+              ? !isCashPayment
                 ? 'Memproses Pembayaran QRIS...'
                 : 'Memproses Pengajuan...'
               : !paymentMethod
                 ? 'Pilih Metode Pembayaran'
                 : isCashPayment
                   ? 'Ajukan Sewa (Bayar Cash)'
-                  : paymentMethod === 'qris'
-                    ? `Bayar Langsung via QRIS — ${formatRupiah(totalPrice)}`
-                    : 'Lanjut ke Pembayaran'
+                  : `Bayar Langsung via QRIS — ${formatRupiah(totalPrice)}`
           }}
         </span>
       </button>
