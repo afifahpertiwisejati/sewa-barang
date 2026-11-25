@@ -160,7 +160,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     deliveryOption,
     deliveryFee,
     totalPrice,
-    status: 'aktif',
+    status: 'menunggu_konfirmasi',
     paymentMethod,
     paymentStatus,
     guaranteeType,
@@ -179,8 +179,8 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     createNotification({
       recipientRole: 'admin',
       type: 'booking_new',
-      title: 'Pesanan Baru Masuk',
-      message: `${booking.renterName} memesan ${booking.itemName} (${booking.startDate} s/d ${booking.endDate}) • Total ${totalFmt}.`,
+      title: 'Pesanan Baru — Perlu Diterima',
+      message: `${booking.renterName} memesan ${booking.itemName} (${booking.startDate} s/d ${booking.endDate}) • Total ${totalFmt}. Klik Terima Sewa untuk menyetujui.`,
       bookingId: booking.id,
       actionUrl: '/admin',
     }),
@@ -188,10 +188,10 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
       userId: user.id,
       recipientRole: 'user',
       type: 'booking_new',
-      title: 'Booking Berhasil Dibuat',
+      title: 'Booking Terkirim — Menunggu Diterima Admin',
       message: paymentMethod === 'cash'
-        ? `Pesanan ${booking.itemName} (${booking.id}) tercatat. Siapkan pembayaran tunai ${totalFmt} & jaminan identitas saat serah-terima.`
-        : `Pesanan ${booking.itemName} (${booking.id}) tercatat (${totalFmt}). Silakan selesaikan pembayaran agar segera terverifikasi.`,
+        ? `Pesanan ${booking.itemName} (${booking.id}) tercatat (${totalFmt}) dan menunggu konfirmasi Terima Sewa dari Admin Butik.`
+        : `Pesanan ${booking.itemName} (${booking.id}) tercatat (${totalFmt}). Selesaikan pembayaran & tunggu konfirmasi Terima Sewa dari Admin Butik.`,
       bookingId: booking.id,
       actionUrl: '/dashboard',
     }),

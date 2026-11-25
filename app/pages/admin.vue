@@ -130,7 +130,7 @@ const catalogItems = computed(() => {
 
 const stats = computed(() => {
   const orders = bookings.value ?? []
-  const activeOrders = orders.filter(b => b.status === 'aktif')
+  const activeOrders = orders.filter(b => b.status === 'aktif' || b.status === 'menunggu_konfirmasi')
   const pendingRefundOrders = orders.filter(
     b => b.status !== 'dibatalkan' && b.deposit > 0 && b.depositStatus === 'menunggu_pengembalian',
   )

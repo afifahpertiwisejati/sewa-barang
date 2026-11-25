@@ -410,7 +410,7 @@ async function initializeSchemaAndSeed(): Promise<Pool> {
       delivery_option ENUM('ambil_sendiri', 'kurir_antar') NOT NULL DEFAULT 'ambil_sendiri',
       delivery_fee INT NOT NULL DEFAULT 0,
       total_price INT NOT NULL,
-      status ENUM('aktif', 'selesai', 'dibatalkan') NOT NULL DEFAULT 'aktif',
+      status ENUM('menunggu_konfirmasi', 'aktif', 'selesai', 'dibatalkan') NOT NULL DEFAULT 'menunggu_konfirmasi',
       payment_method ENUM('cash', 'transfer_bca', 'transfer_mandiri', 'qris', 'gopay') NOT NULL DEFAULT 'transfer_bca',
       payment_status ENUM('belum_bayar', 'bayar_ditempat', 'terverifikasi') NOT NULL DEFAULT 'belum_bayar',
       payment_channel VARCHAR(64) NULL,
@@ -440,6 +440,7 @@ async function initializeSchemaAndSeed(): Promise<Pool> {
 
   // Ensure deposit refund columns exist on pre-existing bookings tables in TiDB
   const depositAlterStmts = [
+    `ALTER TABLE bookings MODIFY COLUMN status ENUM('menunggu_konfirmasi', 'aktif', 'selesai', 'dibatalkan') NOT NULL DEFAULT 'menunggu_konfirmasi'`,
     `ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_status ENUM('ditahan', 'menunggu_pengembalian', 'dikembalikan', 'dipotong') NOT NULL DEFAULT 'ditahan'`,
     `ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_refund_method VARCHAR(40) NULL`,
     `ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_refund_account VARCHAR(191) NULL`,
@@ -786,7 +787,7 @@ export async function listActiveBookingsByItemId(itemId: string): Promise<Bookin
   const pool = await getDbPool()
   const [rows] = await pool.execute<BookingRow[]>(
     `SELECT * FROM bookings
-     WHERE item_id = ? AND status = 'aktif'
+     WHERE item_id = ? AND status IN ('menunggu_konfirmasi', 'aktif')
      ORDER BY start_date ASC`,
     [itemId],
   )
@@ -796,7 +797,7 @@ export async function listActiveBookingsByItemId(itemId: string): Promise<Bookin
 export async function listActiveBookings(): Promise<BookingRecord[]> {
   const pool = await getDbPool()
   const [rows] = await pool.query<BookingRow[]>(
-    `SELECT * FROM bookings WHERE status = 'aktif'`,
+    `SELECT * FROM bookings WHERE status IN ('menunggu_konfirmasi', 'aktif')`,
   )
   return rows.map(mapBookingRow)
 }

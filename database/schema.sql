@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS `bookings` (
   `delivery_option` ENUM('ambil_sendiri', 'kurir_antar') NOT NULL DEFAULT 'ambil_sendiri',
   `delivery_fee` INT NOT NULL DEFAULT 0,
   `total_price` INT NOT NULL,
-  `status` ENUM('aktif', 'selesai', 'dibatalkan') NOT NULL DEFAULT 'aktif',
+  `status` ENUM('menunggu_konfirmasi', 'aktif', 'selesai', 'dibatalkan') NOT NULL DEFAULT 'menunggu_konfirmasi',
   `payment_method` ENUM('cash', 'transfer_bca', 'transfer_mandiri', 'qris', 'gopay') NOT NULL DEFAULT 'transfer_bca',
   `payment_status` ENUM('belum_bayar', 'bayar_ditempat', 'terverifikasi') NOT NULL DEFAULT 'belum_bayar',
   `payment_channel` VARCHAR(64) NULL,

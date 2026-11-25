@@ -34,10 +34,10 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     })
   }
 
-  if (booking.status !== 'aktif') {
+  if (booking.status !== 'aktif' && booking.status !== 'menunggu_konfirmasi') {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Hanya transaksi aktif yang dapat dibayar.',
+      statusMessage: 'Hanya transaksi aktif atau menunggu konfirmasi yang dapat dibayar.',
     })
   }
 
