@@ -165,7 +165,7 @@ async function confirmCashReceived(booking: BookingRecord) {
       body: { paymentStatus: 'terverifikasi' },
     })
     emit('updated')
-    toast.push('Pembayaran Cash Diterima!', {
+    toast.push(booking.paymentMethod === 'cash' ? 'Pembayaran Cash Diterima!' : 'Pembayaran Dikonfirmasi Lunas!', {
       description: `Transaksi ${updated.paymentReference || booking.id} telah tercatat Lunas.`,
       type: 'success',
     })
@@ -537,15 +537,27 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
 
               <!-- Payment Transaction & Guarantee Action Strip -->
               <div class="mt-3 flex flex-wrap items-center gap-2">
-                <!-- Pay Now button for unpaid active booking -->
+                <!-- Pay Now button (Customer ONLY, for unpaid active booking) -->
                 <button
-                  v-if="booking.status === 'aktif' && booking.paymentStatus === 'belum_bayar'"
+                  v-if="!isAdmin && booking.status === 'aktif' && booking.paymentStatus === 'belum_bayar'"
                   type="button"
                   class="inline-flex items-center gap-1.5 rounded-md bg-[#2B2A28] px-3.5 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-[#3F3D39]"
                   @click="activeModalBooking = booking"
                 >
                   <CreditCard class="h-3.5 w-3.5" />
                   Bayar Sekarang
+                </button>
+
+                <!-- Admin manual payment verification (replaces Pay Now on Admin side) -->
+                <button
+                  v-else-if="isAdmin && booking.status === 'aktif' && booking.paymentStatus === 'belum_bayar'"
+                  type="button"
+                  :disabled="updatingId === booking.id"
+                  class="inline-flex items-center gap-1.5 rounded-md bg-[#556256] px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-[#455146] disabled:opacity-60"
+                  @click="confirmCashReceived(booking)"
+                >
+                  <CheckCircle2 class="h-3.5 w-3.5" />
+                  Konfirmasi Pembayaran Lunas
                 </button>
 
                 <!-- Receipt button for paid or cash bookings -->
@@ -667,6 +679,7 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
             <!-- Action Buttons -->
             <div v-if="booking.status === 'aktif'" class="flex gap-2">
               <button
+                v-if="isAdmin"
                 type="button"
                 :disabled="updatingId === booking.id"
                 class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#556256] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[#455146] disabled:opacity-60"
@@ -680,10 +693,11 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
                 type="button"
                 :disabled="updatingId === booking.id"
                 class="inline-flex items-center justify-center gap-1 rounded-md border border-[#E8D0CB] bg-[#FAF4F1] px-3 py-2 text-xs font-medium text-[#9E5245] transition-colors hover:bg-[#F3E2DD] disabled:opacity-60"
+                :class="!isAdmin ? 'w-full' : ''"
                 @click="changeStatus(booking, 'dibatalkan')"
               >
                 <XCircle class="h-3.5 w-3.5" />
-                Batalkan
+                {{ isAdmin ? 'Batalkan' : 'Batalkan Sewa' }}
               </button>
             </div>
             <div

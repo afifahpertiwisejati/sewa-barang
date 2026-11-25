@@ -51,6 +51,12 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     if (!allowedStatuses.includes(body.status)) {
       throw createError({ statusCode: 400, statusMessage: 'Status penyewaan tidak valid.' })
     }
+    if (body.status === 'selesai' && user.role !== 'admin') {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'Hanya Admin Butik yang dapat menyelesaikan penyewaan.',
+      })
+    }
     booking.status = body.status
     if (body.status === 'selesai') {
       booking.guaranteeStatus = 'dikembalikan'
