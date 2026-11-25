@@ -8,7 +8,7 @@ const ALLOWED_TYPES: Record<string, string> = {
   'image/webp': 'webp',
 }
 
-const MAX_BYTES = 4 * 1024 * 1024 // 4 MB
+const MAX_BYTES = 10 * 1024 * 1024 // 10 MB
 
 export default defineEventHandler(async (event) => {
   await requireAuthUser(event)
@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
   if (filePart.data.length > MAX_BYTES) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Ukuran file bukti pembayaran maksimal 4 MB.',
+      statusMessage: 'Ukuran file bukti pembayaran maksimal 10 MB.',
     })
   }
 

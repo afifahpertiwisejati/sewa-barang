@@ -186,9 +186,9 @@ async function handleEditPhotoUpload(event: Event) {
     })
   }
   catch (err: unknown) {
-    const fetchErr = err as { data?: { statusMessage?: string }, statusMessage?: string }
+    const fetchErr = err as { data?: { statusMessage?: string }, statusMessage?: string, message?: string }
     toast.push('Gagal Upload Foto', {
-      description: fetchErr?.data?.statusMessage || fetchErr?.statusMessage || 'Format harus JPG/PNG/WEBP (maks. 5 MB).',
+      description: fetchErr?.data?.statusMessage || fetchErr?.statusMessage || fetchErr?.message || 'Format harus JPG/PNG/WEBP (maks. 10 MB).',
       type: 'error',
     })
   }

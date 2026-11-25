@@ -161,8 +161,8 @@ async function handleProductPhotoUpload(event: Event) {
     }
   }
   catch (err: unknown) {
-    const fetchErr = err as { data?: { statusMessage?: string }, statusMessage?: string }
-    const msg = fetchErr?.data?.statusMessage || fetchErr?.statusMessage || 'Gagal mengunggah foto produk (maks. 5 MB, JPG/PNG/WEBP).'
+    const fetchErr = err as { data?: { statusMessage?: string }, statusMessage?: string, message?: string }
+    const msg = fetchErr?.data?.statusMessage || fetchErr?.statusMessage || fetchErr?.message || 'Gagal mengunggah foto produk (maks. 10 MB, JPG/PNG/WEBP).'
     formError.value = msg
     toast.push('Gagal Upload Foto', { description: msg, type: 'error' })
   }
@@ -466,7 +466,7 @@ async function handleSubmit() {
                 {{ isUploadingImage ? 'Mengunggah foto produk...' : 'Klik untuk Upload Foto Produk dari Komputer / Galeri' }}
               </span>
               <span class="mt-0.5 text-[11px] text-[#8A837A]">
-                Mendukung JPG, PNG, WEBP (maks. 5 MB) &bull; Bisa pilih beberapa foto sekaligus
+                Mendukung JPG, PNG, WEBP (maks. 10 MB) &bull; Bisa pilih beberapa foto sekaligus
               </span>
               <input
                 type="file"
