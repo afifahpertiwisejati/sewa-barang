@@ -25,7 +25,7 @@ const slides = [
   },
   {
     line1: 'Jas Pria & Pantofel,',
-    scriptWord: 'Gagah',
+    scriptWord: '',
     line2Suffix: 'Siap Pakai',
     subtitle: 'Setelan Jas Slim-Fit, Sepatu Pantofel Kulit & High Heels Pesta',
     ctaLabel: 'Lihat Koleksi Jas Pria',
@@ -35,7 +35,7 @@ const slides = [
   {
     line1: 'Dress Pesta Modern,',
     scriptWord: 'Elegan',
-    line2Suffix: 'Tertutup',
+    line2Suffix: '',
     subtitle: 'Brokat Payet & Satin Couture — Ramah Hijab & Gratis Dry-Clean',
     ctaLabel: 'Lihat Dress Modern',
     image: '/images/dress-maroon-ribbon.jpg',
@@ -138,10 +138,13 @@ function submitSearch() {
             <h1 class="font-serif text-4xl font-normal leading-[1.15] tracking-tight text-[#2B2A28] sm:text-5xl lg:text-[54px]">
               <span class="block">{{ activeSlide.line1 }}</span>
               <span class="mt-1 flex flex-wrap items-baseline gap-x-2.5">
-                <span class="font-script text-5xl font-normal text-[#2B2A28] sm:text-6xl lg:text-[66px]">
+                <span
+                  v-if="activeSlide.scriptWord"
+                  class="font-script text-5xl font-normal text-[#2B2A28] sm:text-6xl lg:text-[66px]"
+                >
                   {{ activeSlide.scriptWord }}
                 </span>
-                <span>{{ activeSlide.line2Suffix }}</span>
+                <span v-if="activeSlide.line2Suffix">{{ activeSlide.line2Suffix }}</span>
               </span>
             </h1>
 
