@@ -274,31 +274,40 @@ function printReceipt() {
             </div>
           </div>
 
-          <!-- Virtual Account / Bank / GoPay Display -->
-          <div
-            v-else
-            class="flex items-center justify-between gap-2 rounded-xl border border-[#E8E3DC] bg-[#FAF8F5] p-3.5"
-          >
-            <div class="min-w-0">
-              <p class="text-[10px] uppercase tracking-wider text-[#8A837A]">
-                {{ activeAccount.label }}
-              </p>
-              <p class="mt-0.5 font-mono text-sm font-bold text-[#2B2A28]">
-                {{ activeAccount.account }}
-              </p>
-              <p class="text-[10px] text-[#8A837A]">
-                {{ activeAccount.holder }}
-              </p>
+          <!-- Virtual Account / Bank / GoPay Display + Instant Fake QRIS -->
+          <div v-else class="space-y-3">
+            <div class="flex items-center justify-between gap-2 rounded-xl border border-[#E8E3DC] bg-[#FAF8F5] p-3.5">
+              <div class="min-w-0">
+                <p class="text-[10px] uppercase tracking-wider text-[#8A837A]">
+                  {{ activeAccount.label }}
+                </p>
+                <p class="mt-0.5 font-mono text-sm font-bold text-[#2B2A28]">
+                  {{ activeAccount.account }}
+                </p>
+                <p class="text-[10px] text-[#8A837A]">
+                  {{ activeAccount.holder }}
+                </p>
+              </div>
+              <button
+                type="button"
+                class="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#E8E3DC] bg-white px-2.5 py-1.5 text-[11px] font-medium text-[#2B2A28] hover:border-[#2B2A28]"
+                @click="copyAccount"
+              >
+                <Check v-if="copiedAccount" class="h-3.5 w-3.5 text-[#556256]" />
+                <Copy v-else class="h-3.5 w-3.5" />
+                {{ copiedAccount ? 'Tersalin' : 'Salin' }}
+              </button>
             </div>
-            <button
-              type="button"
-              class="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#E8E3DC] bg-white px-2.5 py-1.5 text-[11px] font-medium text-[#2B2A28] hover:border-[#2B2A28]"
-              @click="copyAccount"
-            >
-              <Check v-if="copiedAccount" class="h-3.5 w-3.5 text-[#556256]" />
-              <Copy v-else class="h-3.5 w-3.5" />
-              {{ copiedAccount ? 'Tersalin' : 'Salin' }}
-            </button>
+
+            <QrisCard
+              compact
+              :amount="localBooking.totalPrice"
+              :reference-id="localBooking.id"
+              :title="`SERUNI ATELIER • ${activeAccount.label}`"
+              :subtitle="`${activeAccount.account} (${activeAccount.holder})`"
+              badge-text="QRIS Transfer Simulasi"
+              hint-text="Scan atau klik Bayar Sekarang di bawah — pembayaran transfer otomatis terverifikasi lunas."
+            />
           </div>
 
           <p class="flex items-center justify-center gap-1.5 text-center text-[11px] text-[#6B655E]">

@@ -364,18 +364,33 @@ async function handleSubmit(action: 'request' | 'process') {
                 </div>
               </div>
 
-              <!-- Destination Account Input -->
-              <div v-if="!isCashMethod">
-                <label for="refund-account" class="mb-1 block text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
-                  No. Rekening / E-Wallet &amp; Nama Pemilik <span class="text-rose-500">*</span>
-                </label>
-                <input
-                  id="refund-account"
-                  v-model="refundAccount"
-                  type="text"
-                  :placeholder="activeMethodInfo.placeholder"
-                  class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3 py-2 text-xs text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
-                >
+              <!-- Destination Account Input + Instant QRIS Preview for Transfer Methods -->
+              <div v-if="!isCashMethod" class="space-y-3">
+                <div>
+                  <label for="refund-account" class="mb-1 block text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
+                    No. Rekening / E-Wallet &amp; Nama Pemilik <span class="text-rose-500">*</span>
+                  </label>
+                  <input
+                    id="refund-account"
+                    v-model="refundAccount"
+                    type="text"
+                    :placeholder="activeMethodInfo.placeholder"
+                    class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3 py-2 text-xs text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
+                  >
+                </div>
+
+                <!-- Fake QRIS Card for Transfer / E-Wallet Refund -->
+                <QrisCard
+                  compact
+                  :amount="isAdmin ? finalRefundAmount : props.booking.deposit"
+                  :reference-id="`RFND-${props.booking.id}`"
+                  :title="`${activeMethodInfo.label} • QRIS Transfer`"
+                  :subtitle="refundAccount.trim() ? `Tujuan: ${refundAccount.trim()}` : `Tujuan: ${props.booking.renterName}`"
+                  badge-text="QRIS Transfer Simulasi"
+                  :hint-text="isAdmin
+                    ? 'QRIS simulasi aktif — klik Konfirmasi & Kembalikan di bawah untuk menyelesaikan transfer refund.'
+                    : 'QRIS simulasi pengembalian deposit — Admin akan mencairkan sesuai rekening di atas.'"
+                />
               </div>
               <div
                 v-else

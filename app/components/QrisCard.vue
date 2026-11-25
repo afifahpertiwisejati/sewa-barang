@@ -5,20 +5,29 @@ const props = withDefaults(defineProps<{
   amount: number
   referenceId?: string
   compact?: boolean
+  title?: string
+  subtitle?: string
+  badgeText?: string
+  hintText?: string
 }>(), {
-  referenceId: 'SEWAIN-QRIS',
+  referenceId: 'SERUNI-QRIS',
   compact: false,
+  title: 'SERUNI ATELIER',
+  subtitle: '',
+  badgeText: 'Langsung Bayar (Tanpa Scan)',
+  hintText: 'Tidak perlu scan kamera — klik tombol konfirmasi untuk langsung memproses transaksi.',
 })
 
 const { formatRupiah } = useFormatters()
 
-const merchantName = 'SERUNI ATELIER'
+const merchantName = computed(() => props.title || 'SERUNI ATELIER')
 const nmid = 'ID1026008899123'
 
 const qrisPayload = computed(() => {
   const amt = String(Math.max(0, Math.round(props.amount)))
-  const ref = (props.referenceId || 'SEWAIN').replace(/[^A-Z0-9-]/gi, '').slice(0, 18)
-  return `00020101021226610014ID.CO.QRIS.WWW01189360001400008899120215${nmid}52045699530336054${String(amt.length).padStart(2, '0')}${amt}5802ID5916${merchantName}6007JAKARTA62${String(ref.length + 4).padStart(2, '0')}05${String(ref.length).padStart(2, '0')}${ref}6304A7F2`
+  const ref = (props.referenceId || 'SERUNI').replace(/[^A-Z0-9-]/gi, '').slice(0, 18)
+  const sub = (props.subtitle || '').replace(/[^A-Z0-9-]/gi, '').slice(0, 16)
+  return `00020101021226610014ID.CO.QRIS.WWW01189360001400008899120215${nmid}52045699530336054${String(amt.length).padStart(2, '0')}${amt}5802ID5916${merchantName.value}6007JAKARTA62${String(ref.length + 4).padStart(2, '0')}05${String(ref.length).padStart(2, '0')}${ref}${sub}6304A7F2`
 })
 
 // Crisp 25x25 deterministic QR matrix with standard finder & alignment patterns
@@ -95,7 +104,7 @@ const qrMatrix = computed<boolean[][]>(() => {
         <span class="rounded bg-white/15 px-1.5 py-0.5 text-[11px] font-bold tracking-wider">QRIS</span>
         <span class="inline-flex items-center gap-1 text-[10px] text-white/90">
           <Zap class="h-3 w-3" />
-          Langsung Bayar (Tanpa Scan)
+          {{ props.badgeText }}
         </span>
       </div>
       <span class="font-mono text-[10px] text-white/80">{{ nmid }}</span>
@@ -107,8 +116,11 @@ const qrMatrix = computed<boolean[][]>(() => {
         <p class="font-serif text-sm font-semibold text-[#2B2A28]">
           {{ merchantName }}
         </p>
-        <p class="text-xs font-semibold text-[#556256]">
-          Total QRIS: {{ formatRupiah(props.amount) }}
+        <p v-if="props.subtitle" class="mt-0.5 font-mono text-[11px] text-[#6B655E]">
+          {{ props.subtitle }}
+        </p>
+        <p class="mt-0.5 text-xs font-semibold text-[#556256]">
+          Nominal QRIS: {{ formatRupiah(props.amount) }}
         </p>
       </div>
 
@@ -140,7 +152,7 @@ const qrMatrix = computed<boolean[][]>(() => {
 
       <p class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#F3F5F2] px-3 py-1.5 text-[10.5px] font-medium text-[#384239]">
         <CheckCircle2 class="h-3.5 w-3.5 shrink-0 text-[#556256]" />
-        <span>Tidak perlu scan kamera — klik tombol bayar untuk langsung lunas.</span>
+        <span>{{ props.hintText }}</span>
       </p>
     </div>
   </div>
