@@ -74,6 +74,9 @@ const form = reactive({
 
 const isUploadingImage = ref(false)
 const hasCustomUpload = ref(false)
+const uploadError = ref('')
+const isDraggingPhoto = ref(false)
+const productPhotoInput = ref<HTMLInputElement | null>(null)
 
 const sizeChoices = computed<readonly string[]>(() => {
   if (form.category === 'High Heels') return SHOE_SIZES_WOMEN
@@ -127,12 +130,16 @@ function toggleSize(size: string) {
   }
 }
 
-async function handleProductPhotoUpload(event: Event) {
-  const input = event.target as HTMLInputElement
-  const files = Array.from(input.files ?? [])
+function triggerProductPhotoPicker() {
+  if (isUploadingImage.value) return
+  productPhotoInput.value?.click()
+}
+
+async function uploadSelectedFiles(files: File[]) {
   if (files.length === 0) return
 
   formError.value = ''
+  uploadError.value = ''
   isUploadingImage.value = true
 
   try {
@@ -140,20 +147,20 @@ async function handleProductPhotoUpload(event: Event) {
     for (const file of files) {
       const optimizedFile = await compressImageFile(file)
       const formData = new FormData()
-      formData.append('file', optimizedFile)
+      formData.append('file', optimizedFile, optimizedFile.name || 'photo.jpg')
       const res = await $fetch<{ url: string }>('/api/uploads/product-image', {
         method: 'POST',
         body: formData,
       })
-      uploadedUrls.push(res.url)
+      if (res?.url) {
+        uploadedUrls.push(res.url)
+      }
     }
 
     if (uploadedUrls.length > 0) {
-      if (!hasCustomUpload.value || !form.imageUrl.trim()) {
-        form.imageUrl = uploadedUrls[0]!
-      }
+      form.imageUrl = uploadedUrls[0]!
       hasCustomUpload.value = true
-      form.gallery = Array.from(new Set([form.imageUrl, ...form.gallery, ...uploadedUrls]))
+      form.gallery = Array.from(new Set([...uploadedUrls, ...form.gallery]))
       toast.push('Foto Produk Berhasil Diunggah!', {
         description: `${uploadedUrls.length} foto siap ditampilkan di katalog.`,
         type: 'success',
@@ -161,15 +168,35 @@ async function handleProductPhotoUpload(event: Event) {
     }
   }
   catch (err: unknown) {
-    const fetchErr = err as { data?: { statusMessage?: string }, statusMessage?: string, message?: string }
-    const msg = fetchErr?.data?.statusMessage || fetchErr?.statusMessage || fetchErr?.message || 'Gagal mengunggah foto produk (maks. 10 MB, JPG/PNG/WEBP).'
+    const fetchErr = err as { data?: { statusMessage?: string, message?: string }, statusMessage?: string, message?: string }
+    const msg
+      = fetchErr?.data?.statusMessage
+        || fetchErr?.data?.message
+        || fetchErr?.statusMessage
+        || fetchErr?.message
+        || 'Gagal mengunggah foto produk (maks. 10 MB, JPG/PNG/WEBP).'
+    uploadError.value = msg
     formError.value = msg
     toast.push('Gagal Upload Foto', { description: msg, type: 'error' })
   }
   finally {
     isUploadingImage.value = false
-    input.value = ''
+    if (productPhotoInput.value) {
+      productPhotoInput.value.value = ''
+    }
   }
+}
+
+async function handleProductPhotoUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  await uploadSelectedFiles(files)
+}
+
+async function handlePhotoDrop(event: DragEvent) {
+  isDraggingPhoto.value = false
+  const files = Array.from(event.dataTransfer?.files ?? [])
+  await uploadSelectedFiles(files)
 }
 
 function setAsMainPhoto(url: string) {
@@ -459,28 +486,53 @@ async function handleSubmit() {
             </span>
 
             <!-- Direct File Upload Dropzone -->
-            <label
-              for="add-item-photo-input"
-              class="relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#CFC8BE] bg-[#FAF8F5] px-4 py-5 text-center transition-colors hover:border-[#556256] hover:bg-white"
+            <div
+              translate="no"
+              class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition-colors"
+              :class="
+                isDraggingPhoto
+                  ? 'border-[#556256] bg-[#F3F5F2]'
+                  : 'border-[#CFC8BE] bg-[#FAF8F5] hover:border-[#556256] hover:bg-white'
+              "
+              @click="triggerProductPhotoPicker"
+              @dragover.prevent="isDraggingPhoto = true"
+              @dragleave.prevent="isDraggingPhoto = false"
+              @drop.prevent="handlePhotoDrop"
             >
               <Loader2 v-if="isUploadingImage" class="h-6 w-6 animate-spin text-[#556256]" />
               <Upload v-else class="h-6 w-6 text-[#556256]" />
               <span class="mt-2 text-xs font-semibold text-[#2B2A28]">
-                {{ isUploadingImage ? 'Mengunggah foto produk...' : 'Klik untuk Upload Foto Produk dari Komputer / Galeri' }}
+                <span v-if="isUploadingImage">Mengunggah foto produk...</span>
+                <span v-else>Klik atau Tarik Foto ke Sini untuk Upload</span>
               </span>
               <span class="mt-0.5 text-[11px] text-[#8A837A]">
                 Mendukung JPG, PNG, WEBP (maks. 10 MB) &bull; Bisa pilih beberapa foto sekaligus
               </span>
-              <input
-                id="add-item-photo-input"
-                type="file"
-                accept="image/*"
-                multiple
-                class="sr-only"
+              <button
+                type="button"
                 :disabled="isUploadingImage"
-                @change="handleProductPhotoUpload"
+                class="mt-3 inline-flex items-center gap-1.5 rounded-md bg-[#2B2A28] px-3.5 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-[#3F3D39] disabled:opacity-60"
+                @click.stop="triggerProductPhotoPicker"
               >
-            </label>
+                <Upload class="h-3.5 w-3.5" />
+                <span>{{ isUploadingImage ? 'Mengunggah...' : 'Pilih Foto dari Komputer / Galeri' }}</span>
+              </button>
+            </div>
+            <input
+              ref="productPhotoInput"
+              type="file"
+              accept="image/*"
+              multiple
+              class="hidden"
+              :disabled="isUploadingImage"
+              @change="handleProductPhotoUpload"
+            >
+            <p
+              v-if="uploadError"
+              class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"
+            >
+              {{ uploadError }}
+            </p>
 
             <!-- Uploaded Gallery Thumbnails -->
             <div v-if="form.gallery.length > 0" class="flex flex-wrap gap-2.5">

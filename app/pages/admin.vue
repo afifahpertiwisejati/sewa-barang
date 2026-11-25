@@ -61,7 +61,13 @@ const editForm = reactive({
 })
 const savingEdit = ref(false)
 const uploadingEditPhoto = ref(false)
+const editPhotoInput = ref<HTMLInputElement | null>(null)
 const deletingId = ref<string | null>(null)
+
+function triggerEditPhotoPicker() {
+  if (uploadingEditPhoto.value) return
+  editPhotoInput.value?.click()
+}
 
 watch(() => route.query.tab, (tab) => {
   if (tab === 'create') activeTab.value = 'create'
@@ -437,6 +443,14 @@ async function handleItemCreated() {
       </div>
 
       <div class="overflow-hidden rounded-2xl border border-[#E8E3DC] bg-white">
+        <input
+          ref="editPhotoInput"
+          type="file"
+          accept="image/*"
+          class="hidden"
+          :disabled="uploadingEditPhoto"
+          @change="handleEditPhotoUpload"
+        >
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-[#EFECE7] text-left text-xs">
             <thead class="bg-[#FAF8F5] text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
@@ -453,39 +467,35 @@ async function handleItemCreated() {
               <tr v-for="item in catalogItems" :key="item.id" class="hover:bg-[#FAF8F5]/70">
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-3">
-                    <div class="flex shrink-0 flex-col items-center gap-1.5">
+                    <div class="flex shrink-0 flex-col items-center gap-1.5" translate="no">
                       <div class="relative h-12 w-10 overflow-hidden rounded-lg bg-[#EFECE7]">
                         <img
                           :src="editingItemId === item.id ? editForm.imageUrl : item.imageUrl"
                           :alt="item.name"
                           class="h-full w-full object-cover object-top"
                         >
-                        <label
+                        <button
                           v-if="editingItemId === item.id"
-                          :for="`edit-photo-${item.id}`"
+                          type="button"
+                          :disabled="uploadingEditPhoto"
                           class="absolute inset-0 flex cursor-pointer items-center justify-center bg-[#2B2A28]/55 text-white transition-opacity hover:bg-[#2B2A28]/75"
                           title="Ganti foto produk"
+                          @click="triggerEditPhotoPicker"
                         >
                           <Loader2 v-if="uploadingEditPhoto" class="h-3.5 w-3.5 animate-spin" />
                           <Upload v-else class="h-3.5 w-3.5" />
-                        </label>
+                        </button>
                       </div>
-                      <label
+                      <button
                         v-if="editingItemId === item.id"
-                        :for="`edit-photo-${item.id}`"
-                        class="cursor-pointer rounded border border-[#D7E0D5] bg-[#F3F5F2] px-1.5 py-0.5 text-[10px] font-medium text-[#556256] hover:bg-[#E5ECE4]"
-                      >
-                        {{ uploadingEditPhoto ? 'Upload...' : 'Ganti Foto' }}
-                      </label>
-                      <input
-                        v-if="editingItemId === item.id"
-                        :id="`edit-photo-${item.id}`"
-                        type="file"
-                        accept="image/*"
-                        class="sr-only"
+                        type="button"
                         :disabled="uploadingEditPhoto"
-                        @change="handleEditPhotoUpload"
+                        class="cursor-pointer rounded border border-[#D7E0D5] bg-[#F3F5F2] px-1.5 py-0.5 text-[10px] font-medium text-[#556256] hover:bg-[#E5ECE4] disabled:opacity-60"
+                        @click="triggerEditPhotoPicker"
                       >
+                        <span v-if="uploadingEditPhoto">Upload...</span>
+                        <span v-else>Ganti Foto</span>
+                      </button>
                     </div>
                     <div class="min-w-0">
                       <input

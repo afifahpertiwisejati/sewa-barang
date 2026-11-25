@@ -33,7 +33,15 @@ function renderCanvasBlob(
     ctx.fillRect(0, 0, width, height)
     ctx.drawImage(img, 0, 0, width, height)
 
-    canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality)
+    const timer = setTimeout(() => resolve(null), 8000)
+    canvas.toBlob(
+      (blob) => {
+        clearTimeout(timer)
+        resolve(blob)
+      },
+      'image/jpeg',
+      quality,
+    )
   })
 }
 
@@ -41,11 +49,18 @@ function loadImageFromFile(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file)
     const img = new Image()
+    const timer = setTimeout(() => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('DECODE_TIMEOUT'))
+    }, 8000)
+
     img.onload = () => {
+      clearTimeout(timer)
       URL.revokeObjectURL(objectUrl)
       resolve(img)
     }
     img.onerror = () => {
+      clearTimeout(timer)
       URL.revokeObjectURL(objectUrl)
       reject(new Error('DECODE_FAILED'))
     }
@@ -98,7 +113,6 @@ export async function compressImageFile(
     }
   }
   catch {
-    // Browser could not decode image on canvas (e.g. HEIC on non-Safari browser)
     if (file.size > HARD_SERVERLESS_LIMIT) {
       throw new Error('Format foto tidak dapat dikompresi oleh browser (mis. HEIC). Simpan/ubah ke JPG atau PNG lalu coba lagi.')
     }

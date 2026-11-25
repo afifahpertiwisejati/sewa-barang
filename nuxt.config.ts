@@ -7,6 +7,12 @@ export default defineNuxtConfig({
     port: 3000,
   },
 
+  vite: {
+    optimizeDeps: {
+      include: ['lucide-vue-next'],
+    },
+  },
+
   runtimeConfig: {
     tidbHost: process.env.TIDB_HOST || '',
     tidbPort: Number(process.env.TIDB_PORT || 4000),
