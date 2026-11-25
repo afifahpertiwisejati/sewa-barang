@@ -105,16 +105,22 @@ interface BookingRow extends RowDataPacket {
 }
 
 function getTidbConfig(): TidbConfig {
-  const host = process.env.TIDB_HOST || ''
-  const port = Number(process.env.TIDB_PORT || 4000)
-  const user = process.env.TIDB_USER || ''
-  const password = process.env.TIDB_PASSWORD || ''
-  const database = (process.env.TIDB_DATABASE || 'sewain_db').replace(/[^a-zA-Z0-9_]/g, '')
-  const caPath = process.env.TIDB_CA_PATH || ''
+  const host = (process.env.TIDB_HOST || '').trim()
+  const port = Number((process.env.TIDB_PORT || '4000').trim())
+  const user = (process.env.TIDB_USER || '').trim()
+  const password = (process.env.TIDB_PASSWORD || '').trim()
+  const database = (process.env.TIDB_DATABASE || 'sewain_db').trim().replace(/[^a-zA-Z0-9_]/g, '')
+  const caPath = (process.env.TIDB_CA_PATH || '').trim()
 
   if (!host || !user || !password || !database) {
+    const missing = [
+      !host ? 'TIDB_HOST' : null,
+      !user ? 'TIDB_USER' : null,
+      !password ? 'TIDB_PASSWORD' : null,
+      !database ? 'TIDB_DATABASE' : null,
+    ].filter(Boolean)
     throw new Error(
-      'Konfigurasi TiDB belum lengkap. Pastikan TIDB_HOST, TIDB_USER, TIDB_PASSWORD, dan TIDB_DATABASE tersedia di file .env.',
+      `Konfigurasi TiDB belum lengkap (${missing.join(', ')} belum diatur di environment variables).`,
     )
   }
 
@@ -246,40 +252,65 @@ async function initializeSchemaAndSeed(): Promise<Pool> {
   const cfg = getTidbConfig()
   const ssl = buildSslOptions(cfg.caPath)
 
-  // Step 1: Ensure dedicated project database (e.g. sewain_db) exists outside sys & test
-  const bootstrapConn = await mysql.createConnection({
-    host: cfg.host,
-    port: cfg.port,
-    user: cfg.user,
-    password: cfg.password,
-    ssl,
-    connectTimeout: 20000,
-  })
-  try {
-    await bootstrapConn.query(
-      `CREATE DATABASE IF NOT EXISTS \`${cfg.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
-    )
-  }
-  finally {
-    await bootstrapConn.end()
-  }
+  const createAppPool = () =>
+    mysql.createPool({
+      host: cfg.host,
+      port: cfg.port,
+      user: cfg.user,
+      password: cfg.password,
+      database: cfg.database,
+      ssl,
+      waitForConnections: true,
+      connectionLimit: 5,
+      queueLimit: 0,
+      decimalNumbers: true,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 10000,
+      connectTimeout: 20000,
+    })
 
-  // Step 2: Create pooled connection bound to sewain_db
-  const pool = mysql.createPool({
-    host: cfg.host,
-    port: cfg.port,
-    user: cfg.user,
-    password: cfg.password,
-    database: cfg.database,
-    ssl,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-    decimalNumbers: true,
-    enableKeepAlive: true,
-    keepAliveInitialDelay: 10000,
-    connectTimeout: 20000,
-  })
+  // Fast-path for Vercel Serverless cold starts: if DB, tables, deposit columns, and data already exist,
+  // skip all DDL/migration round-trips and connect in 1 query.
+  let pool = createAppPool()
+  try {
+    const [probeRows] = await pool.query<RowDataPacket[]>(
+      `SELECT
+        (SELECT COUNT(*) FROM users) AS users_cnt,
+        (SELECT COUNT(*) FROM items) AS items_cnt,
+        (SELECT deposit_status FROM bookings LIMIT 1) AS dep_col`,
+    )
+    const usersCnt = Number(probeRows[0]?.users_cnt || 0)
+    const itemsCnt = Number(probeRows[0]?.items_cnt || 0)
+    if (usersCnt > 0 && itemsCnt > 0) {
+      poolInstance = pool
+      return pool
+    }
+  }
+  catch {
+    // Database, table, or deposit_* columns missing — fall back to full bootstrap below
+    await pool.end().catch(() => {})
+
+    // Step 1: Ensure dedicated project database (e.g. sewain_db) exists outside sys & test
+    const bootstrapConn = await mysql.createConnection({
+      host: cfg.host,
+      port: cfg.port,
+      user: cfg.user,
+      password: cfg.password,
+      ssl,
+      connectTimeout: 20000,
+    })
+    try {
+      await bootstrapConn.query(
+        `CREATE DATABASE IF NOT EXISTS \`${cfg.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
+      )
+    }
+    finally {
+      await bootstrapConn.end()
+    }
+
+    // Step 2: Recreate pooled connection bound to sewain_db
+    pool = createAppPool()
+  }
 
   // Step 3: Create tables if not exist
   await pool.query(`
