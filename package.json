@@ -1,0 +1,27 @@
+{
+  "name": "sewain",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "db:init": "node --env-file=.env database/init-tidb.mjs"
+  },
+  "dependencies": {
+    "@nuxtjs/tailwindcss": "^6.13.2",
+    "lucide-vue-next": "^0.475.0",
+    "mysql2": "^3.24.6",
+    "nuxt": "^4.0.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^5.7.3",
+    "vue-tsc": "^2.2.0"
+  }
+}

@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: #FAF8F5;
+    color: #2B2A28;
+    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-[#FAF8F5] text-[#2B2A28] antialiased selection:bg-[#DEC7BF]/60 selection:text-[#2B2A28];
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

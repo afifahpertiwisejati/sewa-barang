@@ -1,0 +1,236 @@
+export const RENTAL_CATEGORIES = [
+  'Kebaya Wisuda',
+  'Gaun Pesta',
+  'Jas Pria',
+  'High Heels',
+  'Sepatu Pantofel',
+] as const
+
+export const AVAILABLE_SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'All Size'] as const
+export const SHOE_SIZES_WOMEN = ['36', '37', '38', '39', '40'] as const
+export const SHOE_SIZES_MEN = ['40', '41', '42', '43', '44'] as const
+
+export type RentalCategory = (typeof RENTAL_CATEGORIES)[number]
+export type CategoryFilter = 'Semua' | RentalCategory
+export type ItemStatus = 'Tersedia' | 'Sedang Disewa'
+export type DeliveryOption = 'ambil_sendiri' | 'kurir_antar'
+export type BookingStatus = 'aktif' | 'selesai' | 'dibatalkan'
+export type PaymentMethod = 'cash' | 'transfer_bca' | 'transfer_mandiri' | 'qris' | 'gopay'
+export type PaymentStatus = 'belum_bayar' | 'bayar_ditempat' | 'terverifikasi'
+export type GuaranteeType = 'ktp' | 'sim' | 'ktm' | 'kk_paspor'
+export type GuaranteeStatus = 'menunggu_serah' | 'dititipkan' | 'dikembalikan'
+export type DepositStatus = 'ditahan' | 'menunggu_pengembalian' | 'dikembalikan' | 'dipotong'
+export type DepositRefundMethod = 'transfer_bca' | 'transfer_mandiri' | 'transfer_bri' | 'gopay' | 'dana' | 'ovo' | 'cash'
+export type SortOption = 'newest' | 'price_asc' | 'rating_desc'
+
+export interface ItemOwner {
+  name: string
+  city: string
+  verified: boolean
+  joinedYear: number
+  responseRate: number
+  totalRentals: number
+  avatarInitials: string
+}
+
+export interface ItemSpec {
+  label: string
+  value: string
+}
+
+export interface ItemColorVariant {
+  name: string
+  hex: string
+  imageUrl: string
+}
+
+export interface RentalItem {
+  id: string
+  name: string
+  category: RentalCategory
+  location: string
+  pricePerDay: number
+  deposit: number
+  rating: number
+  reviewCount: number
+  status: ItemStatus
+  sizes: string[]
+  colors?: ItemColorVariant[]
+  imageUrl: string
+  gallery: string[]
+  description: string
+  specs: ItemSpec[]
+  owner: ItemOwner
+  createdAt: string
+}
+
+export interface BookedDateRange {
+  bookingId: string
+  startDate: string
+  endDate: string
+}
+
+export interface RentalItemDetail extends RentalItem {
+  bookedRanges: BookedDateRange[]
+}
+
+export interface BookingRecord {
+  id: string
+  userId?: string
+  itemId: string
+  itemName: string
+  itemCategory: RentalCategory
+  itemLocation: string
+  itemImageUrl: string
+  ownerName: string
+  renterName: string
+  renterPhone: string
+  selectedSize: string
+  selectedColor?: string
+  startDate: string
+  endDate: string
+  durationDays: number
+  pricePerDay: number
+  subtotal: number
+  deposit: number
+  deliveryOption: DeliveryOption
+  deliveryFee: number
+  totalPrice: number
+  status: BookingStatus
+  paymentMethod: PaymentMethod
+  paymentStatus: PaymentStatus
+  paymentChannel?: string
+  paymentReference?: string
+  paymentPaidAt?: string
+  guaranteeType: GuaranteeType
+  guaranteeNumber?: string
+  guaranteeStatus: GuaranteeStatus
+  depositStatus?: DepositStatus
+  depositRefundMethod?: DepositRefundMethod
+  depositRefundAccount?: string
+  depositRefundAmount?: number
+  depositDeduction?: number
+  depositRefundReference?: string
+  depositRefundNote?: string
+  depositRefundedAt?: string
+  notes?: string
+  createdAt: string
+}
+
+export interface CreateItemPayload {
+  name: string
+  category: RentalCategory
+  location: string
+  pricePerDay: number
+  deposit: number
+  description: string
+  imageUrl: string
+  gallery?: string[]
+  sizes?: string[]
+  specs?: ItemSpec[]
+  ownerName?: string
+}
+
+export interface CreateBookingPayload {
+  itemId: string
+  startDate: string
+  endDate: string
+  selectedSize?: string
+  selectedColor?: string
+  deliveryOption: DeliveryOption
+  paymentMethod?: PaymentMethod
+  guaranteeType?: GuaranteeType
+  guaranteeNumber?: string
+  renterName: string
+  renterPhone: string
+  notes?: string
+}
+
+export const PAYMENT_ACCOUNTS: Record<PaymentMethod, { label: string, account: string, holder: string, isCash?: boolean }> = {
+  cash: {
+    label: 'Cash / Tunai',
+    account: 'Bayar Tunai di Butik / COD',
+    holder: 'Dibayar langsung saat ambil busana atau saat kurir tiba',
+    isCash: true,
+  },
+  transfer_bca: {
+    label: 'Transfer BCA',
+    account: '1234-5678-90',
+    holder: 'a.n. SewaIn Boutique Indonesia',
+  },
+  transfer_mandiri: {
+    label: 'Transfer Mandiri',
+    account: '137-00-9876543-2',
+    holder: 'a.n. SewaIn Boutique Indonesia',
+  },
+  qris: {
+    label: 'QRIS',
+    account: 'NMID: ID1026008899123',
+    holder: 'Merchant: SewaIn+ Boutique',
+  },
+  gopay: {
+    label: 'GoPay / E-Wallet',
+    account: '0811-2233-4455',
+    holder: 'a.n. Ayu Prameswari (SewaIn+)',
+  },
+}
+
+export const GUARANTEE_OPTIONS: Record<GuaranteeType, { label: string, description: string }> = {
+  ktp: {
+    label: 'E-KTP Asli',
+    description: 'Kartu identitas resmi, dikembalikan utuh saat busana kembali',
+  },
+  sim: {
+    label: 'SIM Asli (A / C)',
+    description: 'Alternatif jaminan identitas resmi selain KTP',
+  },
+  ktm: {
+    label: 'KTM / Kartu Pelajar',
+    description: 'Khusus mahasiswa & pelajar (wisuda / prom)',
+  },
+  kk_paspor: {
+    label: 'KK / Paspor Asli',
+    description: 'Untuk penyewaan paket lamaran atau keluarga',
+  },
+}
+
+export const DEPOSIT_REFUND_METHODS: Record<DepositRefundMethod, { label: string, placeholder: string, isCash?: boolean }> = {
+  transfer_bca: {
+    label: 'Transfer BCA',
+    placeholder: 'Contoh: 1234567890 a.n. Salsabila Putri',
+  },
+  transfer_mandiri: {
+    label: 'Transfer Mandiri',
+    placeholder: 'Contoh: 1370098765432 a.n. Salsabila Putri',
+  },
+  transfer_bri: {
+    label: 'Transfer BRI',
+    placeholder: 'Contoh: 001201001234501 a.n. Salsabila Putri',
+  },
+  gopay: {
+    label: 'GoPay',
+    placeholder: 'Contoh: 0812-3456-7890 a.n. Salsabila Putri',
+  },
+  dana: {
+    label: 'DANA',
+    placeholder: 'Contoh: 0812-3456-7890 a.n. Salsabila Putri',
+  },
+  ovo: {
+    label: 'OVO',
+    placeholder: 'Contoh: 0812-3456-7890 a.n. Salsabila Putri',
+  },
+  cash: {
+    label: 'Tunai di Butik',
+    placeholder: 'Diambil langsung tunai saat pengembalian busana',
+    isCash: true,
+  },
+}
+
+export interface ItemsListResponse {
+  items: RentalItem[]
+  total: number
+  availableCities: string[]
+  maxCatalogPrice: number
+}
+
+export const DELIVERY_FEE_COURIER = 15000
