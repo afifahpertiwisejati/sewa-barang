@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, Loader2, ShieldCheck, Sparkles, UserCheck } from 'lucide-vue-next'
+import { ArrowRight, Loader2, Sparkles } from 'lucide-vue-next'
 
 useHead({
   title: 'Masuk & Daftar — SewaIn+',
@@ -126,7 +126,7 @@ async function handleRegisterSubmit() {
             <span class="font-script text-4xl">Praktis</span> Setiap Acara
           </h1>
           <p class="mt-3 text-xs leading-relaxed text-[#6B655E]">
-            Masuk sebagai <strong>Penyewa</strong> untuk booking kebaya, dress, jas, dan sepatu pesta, atau masuk sebagai <strong>Admin Butik</strong> untuk mengelola koleksi dan pesanan.
+            Masuk atau daftar akun <strong>Penyewa</strong> untuk booking kebaya, dress sopan, jas pria, dan sepatu pesta, serta pantau status penyewaan &amp; pengembalian deposit Anda.
           </p>
         </div>
 
@@ -286,49 +286,27 @@ async function handleRegisterSubmit() {
           </button>
         </form>
 
-        <!-- Quick 1-Click Demo Role Cards -->
-        <div class="mt-8 border-t border-[#EFECE7] pt-6">
-          <p class="text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
-            Masuk Cepat Akun Demo (2 Role)
-          </p>
-
-          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="mt-6 border-t border-[#EFECE7] pt-5 text-center text-xs text-[#8A837A]">
+          <template v-if="mode === 'login'">
+            Belum punya akun penyewa?
             <button
               type="button"
-              :disabled="isSubmitting"
-              class="flex flex-col items-start rounded-xl border border-[#E8E3DC] bg-[#FAF8F5] p-3.5 text-left transition-all hover:border-[#2B2A28] hover:bg-white disabled:opacity-60"
-              @click="handleLoginSubmit('salsa@sewain.id', 'user123')"
+              class="font-semibold text-[#556256] underline-offset-2 hover:underline"
+              @click="mode = 'register'; errorMessage = ''"
             >
-              <div class="flex items-center gap-2 text-xs font-semibold text-[#2B2A28]">
-                <UserCheck class="h-4 w-4 text-[#556256]" />
-                Role 1: Penyewa (User)
-              </div>
-              <p class="mt-1 text-[11px] text-[#8A837A]">
-                salsa@sewain.id &bull; user123
-              </p>
-              <span class="mt-2 text-[11px] font-medium text-[#556256]">
-                Booking &amp; lihat sewaan saya &rarr;
-              </span>
+              Daftar sekarang
             </button>
-
+          </template>
+          <template v-else>
+            Sudah memiliki akun?
             <button
               type="button"
-              :disabled="isSubmitting"
-              class="flex flex-col items-start rounded-xl border border-[#D7E0D5] bg-[#F3F5F2] p-3.5 text-left transition-all hover:border-[#556256] hover:bg-white disabled:opacity-60"
-              @click="handleLoginSubmit('admin@sewain.id', 'admin123')"
+              class="font-semibold text-[#556256] underline-offset-2 hover:underline"
+              @click="mode = 'login'; errorMessage = ''"
             >
-              <div class="flex items-center gap-2 text-xs font-semibold text-[#2B2A28]">
-                <ShieldCheck class="h-4 w-4 text-[#556256]" />
-                Role 2: Admin Butik
-              </div>
-              <p class="mt-1 text-[11px] text-[#6B655E]">
-                admin@sewain.id &bull; admin123
-              </p>
-              <span class="mt-2 text-[11px] font-medium text-[#556256]">
-                Kelola koleksi &amp; semua pesanan &rarr;
-              </span>
+              Masuk di sini
             </button>
-          </div>
+          </template>
         </div>
       </div>
     </div>

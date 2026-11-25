@@ -221,19 +221,20 @@ onMounted(() => {
         <div class="relative grid min-h-[220px] grid-cols-12 overflow-hidden rounded-2xl bg-[#DDD6CC]">
           <div class="col-span-7 flex flex-col justify-center p-6 sm:p-8">
             <h3 class="font-serif text-2xl leading-tight text-[#2B2A28] sm:text-[26px]">
-              Sewakan Busana,<br>Raih Penghasilan
+              Dress Sopan &amp;<br>Gaun Pesta
             </h3>
             <p class="mt-2 text-xs leading-relaxed text-[#5C534E]">
-              Punya kebaya wisuda atau dress sopan yang cuma dipakai sekali? Sewakan di SewaIn+.
+              Koleksi gaun bridesmaid, kondangan, dan lamaran yang anggun &amp; ramah hijab siap pakai.
             </p>
             <div class="mt-5">
-              <NuxtLink
-                to="/admin?tab=create"
+              <button
+                type="button"
                 class="inline-flex items-center gap-1.5 rounded-md bg-[#2B2A28] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#3F3D39]"
+                @click="selectPromoCategory('Gaun Pesta')"
               >
-                Kelola / Tambah Busana
+                Lihat Gaun Pesta
                 <ArrowRight class="h-3.5 w-3.5" />
-              </NuxtLink>
+              </button>
             </div>
           </div>
           <div class="col-span-5 h-full overflow-hidden bg-[#EFECE7]">

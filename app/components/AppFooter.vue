@@ -3,6 +3,7 @@ import { ArrowRight, Ruler, ShieldCheck, Sparkles, Truck } from 'lucide-vue-next
 import { RENTAL_CATEGORIES } from '#shared/types/rental'
 
 const { filters } = useCatalogFilters()
+const { isAdmin, isLoggedIn } = useAuth()
 const router = useRouter()
 const toast = useToast()
 const newsletterEmail = ref('')
@@ -122,12 +123,12 @@ function handleSubscribe() {
                   Penyewaan Saya
                 </NuxtLink>
               </li>
-              <li>
+              <li v-if="isAdmin">
                 <NuxtLink to="/admin" class="transition-colors hover:text-white">
                   Panel Admin Butik
                 </NuxtLink>
               </li>
-              <li>
+              <li v-if="!isLoggedIn">
                 <NuxtLink to="/login" class="transition-colors hover:text-white">
                   Masuk / Daftar
                 </NuxtLink>
