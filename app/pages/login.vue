@@ -112,7 +112,7 @@ async function handleRegisterSubmit() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+  <div class="mx-auto max-w-5xl px-5 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
     <div class="grid grid-cols-1 overflow-hidden rounded-3xl border border-[#E8E3DC] bg-white shadow-sm md:grid-cols-12">
       <!-- Left Editorial Visual Panel -->
       <div class="relative hidden bg-[#EAE5DE] md:col-span-5 md:flex md:flex-col md:justify-between">

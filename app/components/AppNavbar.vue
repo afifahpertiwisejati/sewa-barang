@@ -57,12 +57,12 @@ async function handleLogout() {
 
 <template>
   <header class="sticky top-0 z-40 border-b border-[#E8E3DC] bg-[#FAF8F5]/95 backdrop-blur-md">
-    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-5 sm:px-6 lg:px-8">
       <!-- Left -->
-      <div class="flex items-center gap-3">
+      <div class="flex shrink-0 items-center gap-2 sm:gap-3">
         <button
           type="button"
-          class="inline-flex items-center justify-center rounded-lg p-1.5 text-[#2B2A28] hover:bg-[#EFECE7] md:hidden"
+          class="-ml-1 inline-flex items-center justify-center rounded-lg p-1.5 text-[#2B2A28] hover:bg-[#EFECE7] md:hidden"
           :aria-label="mobileOpen ? 'Tutup menu' : 'Buka menu'"
           @click="mobileOpen = !mobileOpen"
         >
@@ -70,7 +70,7 @@ async function handleLogout() {
           <Menu v-else class="h-5 w-5" />
         </button>
 
-        <NuxtLink to="/" class="font-serif text-2xl font-medium tracking-tight text-[#2B2A28]">
+        <NuxtLink to="/" class="font-serif text-xl font-medium tracking-tight text-[#2B2A28] sm:text-2xl">
           SewaIn<span class="text-[#556256]">+</span>
         </NuxtLink>
       </div>
@@ -128,10 +128,10 @@ async function handleLogout() {
       </nav>
 
       <!-- Right Icons & Auth Controls -->
-      <div class="flex items-center gap-1.5 sm:gap-2.5">
+      <div class="flex shrink-0 items-center gap-1 sm:gap-2.5">
         <button
           type="button"
-          class="rounded-full p-2 text-[#2B2A28] transition-colors hover:bg-[#EFECE7]"
+          class="rounded-full p-1.5 text-[#2B2A28] transition-colors hover:bg-[#EFECE7] sm:p-2"
           aria-label="Cari koleksi"
           title="Cari koleksi"
           @click="focusSearch"
@@ -141,7 +141,7 @@ async function handleLogout() {
 
         <NuxtLink
           to="/#katalog"
-          class="relative rounded-full p-2 text-[#2B2A28] transition-colors hover:bg-[#EFECE7]"
+          class="relative hidden rounded-full p-2 text-[#2B2A28] transition-colors hover:bg-[#EFECE7] sm:inline-flex"
           aria-label="Favorit"
           title="Favorit"
         >
@@ -158,7 +158,7 @@ async function handleLogout() {
 
         <NuxtLink
           :to="isLoggedIn ? (isAdmin ? '/admin' : '/dashboard') : '/login'"
-          class="relative rounded-full p-2 text-[#2B2A28] transition-colors hover:bg-[#EFECE7]"
+          class="relative rounded-full p-1.5 text-[#2B2A28] transition-colors hover:bg-[#EFECE7] sm:p-2"
           aria-label="Penyewaan"
           :title="isAdmin ? 'Pesanan Masuk (Admin)' : 'Penyewaan Saya'"
         >
@@ -207,7 +207,7 @@ async function handleLogout() {
         <NuxtLink
           v-else
           to="/login"
-          class="ml-1 inline-flex items-center gap-1.5 rounded-md bg-[#2B2A28] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[#3F3D39]"
+          class="ml-1.5 mr-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-md bg-[#2B2A28] px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-[#3F3D39] sm:mr-0 sm:px-3.5 sm:py-2 sm:text-xs"
         >
           <LogIn class="h-3.5 w-3.5" />
           <span>Masuk</span>

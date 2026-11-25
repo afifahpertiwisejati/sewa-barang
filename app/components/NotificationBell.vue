@@ -147,7 +147,7 @@ onBeforeUnmount(() => {
   <div v-if="isLoggedIn" ref="containerRef" class="relative">
     <button
       type="button"
-      class="relative rounded-full p-2 text-[#2B2A28] transition-colors hover:bg-[#EFECE7]"
+      class="relative rounded-full p-1.5 text-[#2B2A28] transition-colors hover:bg-[#EFECE7] sm:p-2"
       :aria-label="isAdmin ? 'Notifikasi Admin' : 'Notifikasi Saya'"
       :title="isAdmin ? 'Notifikasi Admin' : 'Notifikasi Saya'"
       @click="toggleDropdown"
