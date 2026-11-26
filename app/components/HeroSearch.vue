@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Calendar, ChevronLeft, ChevronRight, MapPin, Search } from 'lucide-vue-next'
+import { Calendar, ChevronLeft, ChevronRight, MapPin, Search, Sparkles } from 'lucide-vue-next'
 
 const props = defineProps<{
   cities: string[]
@@ -9,6 +9,7 @@ const emit = defineEmits<{
   search: []
 }>()
 
+const { user } = useAuth()
 const { filters } = useCatalogFilters()
 const { getOffsetIsoDate } = useFormatters()
 const todayIso = getOffsetIsoDate(0)
@@ -144,6 +145,12 @@ function submitSearch() {
         <div class="relative grid min-h-[360px] grid-cols-1 items-center gap-6 py-8 sm:min-h-[430px] sm:py-10 md:grid-cols-12 md:py-0">
           <!-- Left Editorial Typography -->
           <div class="z-10 text-left md:col-span-6 md:py-16 md:pl-8 lg:pl-12">
+            <p class="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[#DCD4C9] bg-white/75 px-3.5 py-1 text-xs font-medium tracking-wide text-[#556256] backdrop-blur-sm">
+              <Sparkles class="h-3.5 w-3.5 text-[#556256]" />
+              <span v-if="user">Selamat Datang, {{ user.name.split(' ')[0] }} di Seruni Atelier</span>
+              <span v-else>Selamat Datang di Seruni Atelier</span>
+            </p>
+
             <h1 class="font-serif text-4xl font-normal leading-[1.15] tracking-tight text-[#2B2A28] sm:text-5xl lg:text-[54px]">
               <span class="block">{{ activeSlide.line1 }}</span>
               <span class="mt-1 flex flex-wrap items-baseline gap-x-2.5">
