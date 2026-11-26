@@ -150,6 +150,7 @@ export interface CreateBookingPayload {
   guaranteeNumber?: string
   depositRefundMethod?: DepositRefundMethod
   depositRefundAccount?: string
+  agreedToTerms?: boolean
   renterName: string
   renterPhone: string
   notes?: string

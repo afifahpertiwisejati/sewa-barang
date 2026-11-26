@@ -110,6 +110,13 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     })
   }
 
+  if (body?.agreedToTerms !== true) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Anda wajib mencentang persetujuan Syarat & Ketentuan (denda keterlambatan & ketentuan kerusakan/noda permanen) sebelum menyewa.',
+    })
+  }
+
   const item = await findItemById(itemId)
   if (!item) {
     throw createError({ statusCode: 404, statusMessage: 'Busana tidak ditemukan.' })

@@ -199,6 +199,7 @@ const paymentMethod = ref<PaymentMethod | ''>('')
 const selectedQrisChannel = ref('BCA Mobile')
 const activeModalBooking = ref<BookingRecord | null>(null)
 const showTermsModal = ref(false)
+const agreedToTerms = ref(false)
 const guaranteeType = ref<GuaranteeType>('ktp')
 
 const qrisChannels = [
@@ -316,6 +317,7 @@ const canSubmit = computed(() => {
     && renterPhone.value.trim().length >= 8
     && guaranteeNumber.value.trim().length >= 4
     && hasValidRefundAccount.value
+    && agreedToTerms.value
   )
 })
 
@@ -338,7 +340,9 @@ async function handleBookingSubmit() {
     submitError.value = dateValidationError.value
       || (!hasValidRefundAccount.value
         ? 'Mohon isi nomor rekening / e-wallet & nama pemilik untuk tujuan pengembalian deposit.'
-        : 'Mohon lengkapi data penyewa, nomor kartu jaminan, dan pilih metode pembayaran.')
+        : !agreedToTerms.value
+            ? 'Mohon centang persetujuan Syarat & Ketentuan (denda keterlambatan & ketentuan kerusakan/noda permanen) terlebih dahulu.'
+            : 'Mohon lengkapi data penyewa, nomor kartu jaminan, dan pilih metode pembayaran.')
     return
   }
 
@@ -362,6 +366,7 @@ async function handleBookingSubmit() {
         depositRefundAccount: props.item.deposit > 0
           ? (isCashRefund.value ? 'Tunai di Butik Seruni Atelier' : depositRefundAccount.value.trim())
           : undefined,
+        agreedToTerms: agreedToTerms.value,
         renterName: renterName.value.trim(),
         renterPhone: renterPhone.value.trim(),
         notes: notes.value.trim() || undefined,
@@ -371,6 +376,7 @@ async function handleBookingSubmit() {
     createdBooking.value = booking
     guaranteeNumber.value = ''
     depositRefundAccount.value = ''
+    agreedToTerms.value = false
     await refreshNuxtData('nav-bookings')
     emit('booked', booking)
 
@@ -1169,6 +1175,33 @@ function handlePaid(updated: BookingRecord) {
         </div>
       </div>
 
+      <!-- Mandatory S&K Agreement Checkbox -->
+      <label
+        class="flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 text-[11px] leading-relaxed transition-colors"
+        :class="
+          agreedToTerms
+            ? 'border-[#C7D1C5] bg-[#F3F5F2] text-[#2B2A28]'
+            : 'border-[#E8E3DC] bg-[#FAF8F5] text-[#6B655E] hover:border-[#C7D1C5]'
+        "
+      >
+        <input
+          v-model="agreedToTerms"
+          type="checkbox"
+          required
+          class="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-[#C9C3BA] accent-[#556256]"
+        >
+        <span>
+          Saya telah membaca &amp; menyetujui
+          <button
+            type="button"
+            class="font-semibold text-[#556256] underline decoration-[#556256]/50 underline-offset-2 hover:text-[#2B2A28]"
+            @click.prevent="showTermsModal = true"
+          >
+            Syarat &amp; Ketentuan Sewa
+          </button>, termasuk ketentuan <strong>denda keterlambatan pengembalian Rp25.000/hari</strong> serta pemotongan deposit atas <strong>noda permanen (Rp10.000)</strong>, <strong>aksesoris hilang (Rp20.000)</strong>, maupun <strong>kerusakan busana (Rp30.000 – Rp40.000)</strong>.
+        </span>
+      </label>
+
       <!-- API Error -->
       <p
         v-if="submitError"
@@ -1177,7 +1210,7 @@ function handlePaid(updated: BookingRecord) {
         {{ submitError }}
       </p>
 
-      <!-- Submit Button (Requires Login) -->
+      <!-- Submit Button (Requires Login & S&K Agreement) -->
       <button
         v-if="isLoggedIn"
         type="submit"
@@ -1193,9 +1226,11 @@ function handlePaid(updated: BookingRecord) {
                 : 'Memproses Pengajuan...'
               : !paymentMethod
                 ? `Pilih Metode Pembayaran (${formatRupiah(totalPrice)})`
-                : isCashPayment
-                  ? `Sewa Sekarang (Bayar Cash) — ${formatRupiah(totalPrice)}`
-                  : `Sewa Sekarang & Bayar QRIS — ${formatRupiah(totalPrice)}`
+                : !agreedToTerms
+                  ? 'Centang Persetujuan S&K untuk Lanjut Bayar'
+                  : isCashPayment
+                    ? `Sewa Sekarang (Bayar Cash) — ${formatRupiah(totalPrice)}`
+                    : `Sewa Sekarang & Bayar QRIS — ${formatRupiah(totalPrice)}`
           }}
         </span>
       </button>

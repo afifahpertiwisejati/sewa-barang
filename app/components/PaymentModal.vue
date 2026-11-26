@@ -34,6 +34,8 @@ const selectedMethod = ref<PaymentMethod>('qris')
 const selectedQrisChannel = ref('BCA Mobile')
 const isPaying = ref(false)
 const copiedAccount = ref(false)
+const agreedToTerms = ref(false)
+const showTermsModal = ref(false)
 const localBooking = ref<BookingRecord | null>(null)
 
 const qrisChannels = [
@@ -49,6 +51,7 @@ watch(
   () => props.booking,
   (b) => {
     localBooking.value = b ? { ...b } : null
+    agreedToTerms.value = false
     if (b) {
       selectedMethod.value = b.paymentMethod || 'qris'
       if (b.paymentChannel) {
@@ -95,7 +98,7 @@ async function copyAccount() {
 }
 
 async function processPayment() {
-  if (!localBooking.value || isPaying.value) return
+  if (!localBooking.value || isPaying.value || !agreedToTerms.value) return
   isPaying.value = true
 
   try {
@@ -315,12 +318,39 @@ function printReceipt() {
             Pembayaran langsung diproses otomatis tanpa scan kamera &amp; tanpa upload foto.
           </p>
 
+          <!-- Mandatory S&K Agreement Checkbox -->
+          <label
+            class="flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 text-[11px] leading-relaxed transition-colors"
+            :class="
+              agreedToTerms
+                ? 'border-[#C7D1C5] bg-[#F3F5F2] text-[#2B2A28]'
+                : 'border-[#E8E3DC] bg-[#FAF8F5] text-[#6B655E] hover:border-[#C7D1C5]'
+            "
+          >
+            <input
+              v-model="agreedToTerms"
+              type="checkbox"
+              class="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-[#C9C3BA] accent-[#556256]"
+            >
+            <span>
+              Saya menyetujui
+              <button
+                type="button"
+                class="font-semibold text-[#556256] underline underline-offset-2 hover:text-[#2B2A28]"
+                @click.prevent="showTermsModal = true"
+              >
+                S&amp;K Sewa
+              </button>
+              terkait <strong>denda telat Rp25.000/hari</strong> &amp; ketentuan <strong>kerusakan/noda permanen</strong>.
+            </span>
+          </label>
+
           <!-- Pay CTA -->
           <div class="space-y-2 pt-1">
             <button
               type="button"
-              :disabled="isPaying"
-              class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#556256] px-4 py-3 text-xs font-semibold text-white transition-colors hover:bg-[#455146] disabled:opacity-60"
+              :disabled="isPaying || !agreedToTerms"
+              class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#556256] px-4 py-3 text-xs font-semibold text-white transition-colors hover:bg-[#455146] disabled:cursor-not-allowed disabled:bg-[#C9C3BA]"
               @click="processPayment"
             >
               <Loader2 v-if="isPaying" class="h-4 w-4 animate-spin" />
@@ -329,11 +359,13 @@ function printReceipt() {
                 {{
                   isPaying
                     ? 'Memproses Transaksi Pembayaran...'
-                    : selectedMethod === 'cash'
-                      ? 'Konfirmasi Bayar Cash di Tempat'
-                      : selectedMethod === 'qris'
-                        ? `Bayar QRIS via ${selectedQrisChannel} — ${formatRupiah(localBooking.totalPrice)}`
-                        : `Bayar Sekarang — ${formatRupiah(localBooking.totalPrice)}`
+                    : !agreedToTerms
+                      ? 'Centang Persetujuan S&K untuk Bayar'
+                      : selectedMethod === 'cash'
+                        ? 'Konfirmasi Bayar Cash di Tempat'
+                        : selectedMethod === 'qris'
+                          ? `Bayar QRIS via ${selectedQrisChannel} — ${formatRupiah(localBooking.totalPrice)}`
+                          : `Bayar Sekarang — ${formatRupiah(localBooking.totalPrice)}`
                 }}
               </span>
             </button>
@@ -454,5 +486,6 @@ function printReceipt() {
         </div>
       </div>
     </div>
+    <TermsModal :open="showTermsModal" @close="showTermsModal = false" />
   </Teleport>
 </template>
