@@ -393,7 +393,7 @@ onMounted(() => {
     <section id="terbaru" class="mx-auto max-w-7xl px-4 pt-16 sm:px-6 lg:px-8">
       <div class="mb-6 flex items-baseline justify-between">
         <h2 class="font-serif text-2xl font-normal tracking-tight text-[#2B2A28] sm:text-[28px]">
-          Baru Masuk
+          Koleksi Terbaru
         </h2>
         <button
           type="button"

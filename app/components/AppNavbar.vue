@@ -100,7 +100,7 @@ async function handleLogout() {
           to="/#terbaru"
           class="py-1 text-sm font-medium text-[#6B655E] transition-colors hover:text-[#2B2A28]"
         >
-          Baru Masuk
+          Koleksi Terbaru
         </NuxtLink>
         <NuxtLink
           to="/cara-sewa"

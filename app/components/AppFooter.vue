@@ -131,7 +131,7 @@ function handleSubscribe() {
               </li>
               <li>
                 <NuxtLink to="/#terbaru" class="transition-colors hover:text-white">
-                  Baru Masuk
+                  Koleksi Terbaru
                 </NuxtLink>
               </li>
               <li>
