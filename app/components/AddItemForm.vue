@@ -60,7 +60,7 @@ const sampleImages = [
 
 const form = reactive({
   name: '',
-  category: 'Kebaya Wisuda' as RentalCategory,
+  category: 'Kebaya Modern' as RentalCategory,
   location: 'Jakarta Selatan',
   pricePerDay: 85000,
   deposit: 75000,
@@ -342,7 +342,7 @@ async function handleSubmit() {
             Sewakan Dress atau Kebaya Anda
           </h2>
           <p class="mt-1 text-xs text-[#8A837A]">
-            Daftarkan koleksi kebaya wisuda, gaun pesta, atau dress bridesmaid agar dapat disewa pengguna lain.
+            Daftarkan koleksi kebaya modern, gaun pesta, atau dress bridesmaid agar dapat disewa pengguna lain.
           </p>
         </div>
 

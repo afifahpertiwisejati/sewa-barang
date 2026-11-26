@@ -1,5 +1,5 @@
 export const RENTAL_CATEGORIES = [
-  'Kebaya Wisuda',
+  'Kebaya Modern',
   'Gaun Pesta',
   'Jas Pria',
   'High Heels',

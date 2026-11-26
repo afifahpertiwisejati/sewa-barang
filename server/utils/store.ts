@@ -252,7 +252,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-payet-selendang-mahogany-ratu',
       name: 'Kebaya Modern Full Payet Selendang & Songket Champagne "Ratu"',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Jakarta Selatan',
       pricePerDay: 135000,
       deposit: 100000,
@@ -791,7 +791,7 @@ export function createSeedData(): DatabaseSchema {
       imageUrl: '/images/heels-lux-1-ivory.jpg',
       gallery: createLuxuryHeelsColors('heels-lux-1', 'ivory').map(c => c.imageUrl),
       description:
-        'High heels stiletto model D\'Orsay ujung lancip dengan panel mesh transparan bertabur kristal halus yang memeluk lengkung kaki secara anggun. Tersedia 4 pilihan warna elegan (Ivory, Hitam, Burgundy, Mahogany) — cocok untuk kebaya wisuda, lamaran, dan gaun pesta.',
+        'High heels stiletto model D\'Orsay ujung lancip dengan panel mesh transparan bertabur kristal halus yang memeluk lengkung kaki secara anggun. Tersedia 4 pilihan warna elegan (Ivory, Hitam, Burgundy, Mahogany) — cocok untuk kebaya modern, lamaran, dan gaun pesta.',
       specs: [
         { label: 'Model & Tinggi Hak', value: '8 cm Pointed D\'Orsay Crystal Mesh Stiletto' },
         { label: 'Pilihan Warna', value: 'Ivory, Hitam, Burgundy, Mahogany' },
@@ -1274,7 +1274,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-hijab-scallop-zahra',
       name: 'Kebaya Modern Hijab Payet Scallop "Zahra" + Songket Putih (6 Warna)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Jakarta Selatan',
       pricePerDay: 115000,
       deposit: 100000,
@@ -1307,7 +1307,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-rumbai-3d-pastel-arumi',
       name: 'Kebaya Couture Payet Bunga 3D & Rumbai Mutiara "Arumi" (7 Warna)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Jakarta Selatan',
       pricePerDay: 140000,
       deposit: 125000,
@@ -1340,7 +1340,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-selendang-ruffle-syala',
       name: 'Kebaya Modern Selendang Ruffle & Rumbai Mutiara "Syala" (7 Warna)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Bandung',
       pricePerDay: 130000,
       deposit: 100000,
@@ -1373,7 +1373,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-pita-bunga-celine',
       name: 'Kebaya Couture Pita Dada & Bunga 3D Bahu "Celine" (7 Warna)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Jakarta Selatan',
       pricePerDay: 145000,
       deposit: 125000,
@@ -1406,7 +1406,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-payet-rantai-aminah',
       name: 'Kebaya Modern Kerah Shanghai Payet Rantai "Aminah" + Songket Putih (6 Warna)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Yogyakarta',
       pricePerDay: 110000,
       deposit: 100000,
@@ -1439,7 +1439,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-payet-kerah-tinggi-efanna',
       name: 'Kebaya Modern Full Payet Kerah Tinggi "Efanna" + Songket (6 Warna)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Jakarta Selatan',
       pricePerDay: 125000,
       deposit: 100000,
@@ -1472,7 +1472,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-janggan-modern-nirmala',
       name: 'Set Kebaya Janggan Modern "Nirmala" + Obi & Selendang Batik (6 Warna)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Bandung',
       pricePerDay: 95000,
       deposit: 75000,
@@ -1504,8 +1504,8 @@ export function createSeedData(): DatabaseSchema {
     },
     {
       id: 'kebaya-cape-tile-bahu-cendana',
-      name: 'Kebaya Wisuda Cape Tile Bahu Payet "Cendana" (6 Warna)',
-      category: 'Kebaya Wisuda',
+      name: 'Kebaya Modern Cape Tile Bahu Payet "Cendana" (6 Warna)',
+      category: 'Kebaya Modern',
       location: 'Jakarta Selatan',
       pricePerDay: 115000,
       deposit: 100000,
@@ -1517,7 +1517,7 @@ export function createSeedData(): DatabaseSchema {
       imageUrl: '/images/kebaya-cape-navy-payet.jpg',
       gallery: createKebayaNavyColors('kebaya-cape-navy-payet').map(c => c.imageUrl),
       description:
-        'Kebaya wisuda modern berkilau payet bintang & floral perak di dada dengan aksen bunga 3D bahu dan cape tile transparan panjang menjuntai lembut. Potongan bawah asimetris anggun dengan 6 pilihan warna elegan (Navy, Burgundy, Emerald, Mahogany, Sage, Hitam).',
+        'Kebaya modern modern berkilau payet bintang & floral perak di dada dengan aksen bunga 3D bahu dan cape tile transparan panjang menjuntai lembut. Potongan bawah asimetris anggun dengan 6 pilihan warna elegan (Navy, Burgundy, Emerald, Mahogany, Sage, Hitam).',
       specs: [
         { label: 'Model & Potongan', value: 'Kerah Shanghai + Cape Tile Bahu + Potongan Asimetris' },
         { label: 'Pilihan Warna', value: 'Navy, Burgundy, Emerald, Mahogany, Sage, Hitam' },
@@ -1538,7 +1538,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-janggan-brokat-nuwara',
       name: 'Kebaya Janggan Brokat Kancing Mutiara "Nuwara" (6 Warna)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Yogyakarta',
       pricePerDay: 105000,
       deposit: 75000,
@@ -1571,7 +1571,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-janggan-klasik-anindya',
       name: 'Kebaya Janggan Klasik Bordir "Anindya" + Selendang Batik (6 Warna)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Yogyakarta',
       pricePerDay: 95000,
       deposit: 75000,
@@ -1604,7 +1604,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-payet-peplum-alana',
       name: 'Kebaya Modern Payet Peplum "Alana" + Songket Champagne (6 Warna)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Jakarta Selatan',
       pricePerDay: 120000,
       deposit: 100000,
@@ -2075,7 +2075,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-burgundy-couture-selena',
       name: 'Kebaya Modern Couture Cape "Selena" + Songket (6 Warna)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Jakarta Selatan',
       pricePerDay: 135000,
       deposit: 100000,
@@ -2108,7 +2108,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-janggan-denim-kencana',
       name: 'Set Kebaya Janggan Modern Denim Blue "Kencana" (Hijab Friendly)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Bandung',
       pricePerDay: 85000,
       deposit: 75000,
@@ -2144,7 +2144,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-butter-yellow-aurora',
       name: 'Kebaya Modern Butter Yellow Ruffle "Aurora" + Batik Emas',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Jakarta Selatan',
       pricePerDay: 115000,
       deposit: 100000,
@@ -2180,7 +2180,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-terracotta-modern-maharani',
       name: 'Kebaya Modern Terracotta Peplum & Tile "Maharani"',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Yogyakarta',
       pricePerDay: 95000,
       deposit: 75000,
@@ -2267,7 +2267,7 @@ export function createSeedData(): DatabaseSchema {
         '/images/heels-ivory-pearl-mahogany.jpg',
       ],
       description:
-        'High heels ujung lancip (pointed-toe) warna ivory mutiara dengan hak 7 cm yang memberi siluet kaki jenjang dan anggun saat memakai kebaya wisuda maupun gaun pesta panjang. Dilengkapi bantalan tumit anti-lecet serta sterilisasi UV higienis sebelum pengiriman.',
+        'High heels ujung lancip (pointed-toe) warna ivory mutiara dengan hak 7 cm yang memberi siluet kaki jenjang dan anggun saat memakai kebaya modern maupun gaun pesta panjang. Dilengkapi bantalan tumit anti-lecet serta sterilisasi UV higienis sebelum pengiriman.',
       specs: [
         { label: 'Tinggi Hak', value: '7 cm Slender Stiletto (Seimbang)' },
         { label: 'Bahan', value: 'Pearl Ivory Finish + Heel Cushion Anti-Lecet' },
@@ -2339,7 +2339,7 @@ export function createSeedData(): DatabaseSchema {
         '/images/heels-crystal-seraphina-mahogany.jpg',
       ],
       description:
-        'Heels pesta mewah bertabur kristal silver champagne yang berkilau lembut — cocok untuk kebaya wisuda, kebaya lamaran ivory, maupun gaun resepsi malam. Bantalan empuk nyaman dipakai berdiri dan berfoto.',
+        'Heels pesta mewah bertabur kristal silver champagne yang berkilau lembut — cocok untuk kebaya modern, kebaya lamaran ivory, maupun gaun resepsi malam. Bantalan empuk nyaman dipakai berdiri dan berfoto.',
       specs: [
         { label: 'Tinggi Hak', value: '7 cm Bridal Crystal Heel (Stabil)' },
         { label: 'Detail', value: 'Full Crystal Mesh + Soft Padded Footbed' },
@@ -2432,7 +2432,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-modern-sage-ayu',
       name: 'Kebaya Modern Payet Sage "Ayu" (Hijab Friendly)',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Jakarta Selatan',
       pricePerDay: 95000,
       deposit: 75000,
@@ -2444,7 +2444,7 @@ export function createSeedData(): DatabaseSchema {
       imageUrl: '/images/kebaya-sage.jpg',
       gallery: ['/images/kebaya-sage.jpg', '/images/kebaya-sage-mahogany.jpg'],
       description:
-        'Kebaya wisuda sopan bernuansa sage lembut dengan potongan lengan panjang, kerah tinggi tertutup, dan furing penuh anti-nerawang. Dihiasi payet mutiara Jepang jahitan tangan serta dipadukan kain lilit batik modern. Sangat nyaman untuk berhijab maupun non-hijab, sudah termasuk layanan laundry dry-clean profesional.',
+        'Kebaya modern sopan bernuansa sage lembut dengan potongan lengan panjang, kerah tinggi tertutup, dan furing penuh anti-nerawang. Dihiasi payet mutiara Jepang jahitan tangan serta dipadukan kain lilit batik modern. Sangat nyaman untuk berhijab maupun non-hijab, sudah termasuk layanan laundry dry-clean profesional.',
       specs: [
         { label: 'Model & Potongan', value: 'Lengan Panjang, Kerah Tertutup, Ramah Hijab' },
         { label: 'Bahan Utama', value: 'Tulle Prancis + Full Furing + Payet Mutiara' },
@@ -2642,7 +2642,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-kutubaru-champagne-sekar',
       name: 'Kebaya Brokat Champagne "Sekar" + Rok Songket',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Yogyakarta',
       pricePerDay: 75000,
       deposit: 50000,
@@ -2711,7 +2711,7 @@ export function createSeedData(): DatabaseSchema {
     {
       id: 'kebaya-lamaran-pearl-kirana',
       name: 'Kebaya Lamaran Full Payet Pearl Ivory "Kirana"',
-      category: 'Kebaya Wisuda',
+      category: 'Kebaya Modern',
       location: 'Jakarta Pusat',
       pricePerDay: 150000,
       deposit: 150000,
@@ -2874,7 +2874,7 @@ export function createSeedData(): DatabaseSchema {
       userId: 'user-salsa',
       itemId: 'kebaya-lamaran-pearl-kirana',
       itemName: 'Kebaya Lamaran Full Payet Pearl Ivory "Kirana"',
-      itemCategory: 'Kebaya Wisuda',
+      itemCategory: 'Kebaya Modern',
       itemLocation: 'Jakarta Pusat',
       itemImageUrl: '/images/kebaya-ivory.jpg',
       ownerName: 'Nadia Kusuma',

@@ -44,7 +44,7 @@ export default defineNuxtConfig({
         {
           name: 'description',
           content:
-            'Sewa kebaya wisuda, gaun pesta, kebaya lamaran, hingga dress bridesmaid terkurasi dari pemilik terverifikasi di seluruh Indonesia. Sudah termasuk laundry dry-clean.',
+            'Sewa kebaya modern, gaun pesta, kebaya lamaran, hingga dress bridesmaid terkurasi dari pemilik terverifikasi di seluruh Indonesia. Sudah termasuk laundry dry-clean.',
         },
       ],
       link: [

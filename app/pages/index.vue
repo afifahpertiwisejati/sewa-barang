@@ -10,7 +10,7 @@ import {
 import { DEFAULT_MAX_PRICE } from '../composables/useCatalogFilters'
 
 useHead({
-  title: 'Seruni Atelier — Sewa Dress & Kebaya Wisuda, Lamaran, dan Pesta',
+  title: 'Seruni Atelier — Sewa Dress & Kebaya Modern, Lamaran, dan Pesta',
 })
 
 const { filters, hasActiveFilters, resetFilters } = useCatalogFilters()
@@ -58,8 +58,8 @@ const categoryCounts = computed<Record<string, number>>(() => {
 })
 
 const etalaseMeta: Record<RentalCategory, { title: string, subtitle: string }> = {
-  'Kebaya Wisuda': {
-    title: 'Etalase Kebaya Wisuda & Lamaran',
+  'Kebaya Modern': {
+    title: 'Etalase Kebaya Modern',
     subtitle: 'Kebaya payet modern, kutubaru, dan kurung Melayu siap pakai',
   },
   'Gaun Pesta': {
@@ -110,7 +110,7 @@ function selectEtalase(category: CategoryFilter) {
   scrollToCatalog()
 }
 
-function selectPromoCategory(category: 'Kebaya Wisuda' | 'Gaun Pesta') {
+function selectPromoCategory(category: 'Kebaya Modern' | 'Gaun Pesta') {
   filters.value.category = category
   scrollToCatalog()
 }
@@ -339,7 +339,7 @@ onMounted(() => {
               <button
                 type="button"
                 class="inline-flex items-center gap-1.5 rounded-md bg-[#2B2A28] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#3F3D39]"
-                @click="selectPromoCategory('Kebaya Wisuda')"
+                @click="selectPromoCategory('Kebaya Modern')"
               >
                 Lihat Kebaya
                 <ArrowRight class="h-3.5 w-3.5" />

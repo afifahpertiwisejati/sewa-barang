@@ -24,7 +24,7 @@ const categories: {
     bgClass: 'bg-[#E5DDD5]',
   },
   {
-    label: 'Kebaya Wisuda',
+    label: 'Kebaya Modern',
     shortLabel: 'Kebaya Modern',
     image: '/images/kebaya-burgundy-couture.jpg',
     bgClass: 'bg-[#DFC9C2]',

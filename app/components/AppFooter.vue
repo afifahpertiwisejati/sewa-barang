@@ -88,7 +88,7 @@ function handleSubscribe() {
               Seruni <span class="italic text-[#D8DFD7]">Atelier</span>
             </NuxtLink>
             <p class="mt-2.5 text-xs leading-relaxed text-[#D8DFD7]">
-              Platform kurasi sewa kebaya wisuda, gaun pesta, dan busana lamaran di Indonesia. Tampil memukau tanpa harus memenuhi lemari.
+              Platform kurasi sewa kebaya modern, gaun pesta, dan busana lamaran di Indonesia. Tampil memukau tanpa harus memenuhi lemari.
             </p>
             <div class="mt-5 flex items-center gap-3 text-xs text-[#D8DFD7]">
               <span class="rounded-full border border-white/20 px-2.5 py-1">IG</span>
@@ -160,7 +160,7 @@ function handleSubscribe() {
               Tetap Terhubung
             </h3>
             <p class="mt-2.5 text-xs text-[#D8DFD7]">
-              Dapatkan info koleksi kebaya wisuda &amp; gaun pesta terbaru setiap minggu.
+              Dapatkan info koleksi kebaya modern &amp; gaun pesta terbaru setiap minggu.
             </p>
             <form class="mt-4 flex overflow-hidden rounded-md bg-white shadow-sm" @submit.prevent="handleSubscribe">
               <input

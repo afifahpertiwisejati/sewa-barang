@@ -26,12 +26,12 @@ CREATE TABLE IF NOT EXISTS `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
--- 2. Items Table (Catalog: Kebaya Wisuda, Gaun Pesta, Jas Pria, High Heels, Pantofel)
+-- 2. Items Table (Catalog: Kebaya Modern, Gaun Pesta, Jas Pria, High Heels, Pantofel)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `items` (
   `id` VARCHAR(100) NOT NULL,
   `name` VARCHAR(255) NOT NULL,
-  `category` ENUM('Kebaya Wisuda', 'Gaun Pesta', 'Jas Pria', 'High Heels', 'Sepatu Pantofel') NOT NULL,
+  `category` ENUM('Kebaya Modern', 'Gaun Pesta', 'Jas Pria', 'High Heels', 'Sepatu Pantofel') NOT NULL,
   `location` VARCHAR(120) NOT NULL,
   `price_per_day` INT NOT NULL,
   `deposit` INT NOT NULL DEFAULT 0,
