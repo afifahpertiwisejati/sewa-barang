@@ -6,6 +6,14 @@ export const RENTAL_CATEGORIES = [
   'Sepatu Pantofel',
 ] as const
 
+export const CATEGORY_MATERIAL_SPECS: Record<(typeof RENTAL_CATEGORIES)[number], string> = {
+  'Kebaya Modern': 'Brokat Prancis Lembut + Full Furing',
+  'Gaun Pesta': 'Satin Silk / Tulle Halus + Full Furing',
+  'Jas Pria': 'Semi-Wool / High-Twist Anti Kusut',
+  'High Heels': 'Kulit Sintetis Halus + Bantalan Empuk',
+  'Sepatu Pantofel': 'Kulit Sintetis Halus + Bantalan Empuk',
+}
+
 export const AVAILABLE_SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'All Size'] as const
 export const SHOE_SIZES_WOMEN = ['36', '37', '38', '39', '40'] as const
 export const SHOE_SIZES_MEN = ['40', '41', '42', '43', '44'] as const

@@ -1,4 +1,5 @@
 import {
+  CATEGORY_MATERIAL_SPECS,
   RENTAL_CATEGORIES,
   type CreateItemPayload,
   type RentalCategory,
@@ -106,7 +107,7 @@ export default defineEventHandler(async (event): Promise<RentalItem> => {
         .filter(s => s?.label?.trim() && s?.value?.trim())
         .map(s => ({ label: s.label.trim(), value: s.value.trim() }))
     : [
-        { label: 'Kategori', value: category },
+        { label: 'Bahan & Detail', value: CATEGORY_MATERIAL_SPECS[category] },
         { label: 'Ukuran Tersedia', value: sizes.join(', ') },
         { label: 'Lokasi', value: location },
         { label: 'Perawatan', value: 'Gratis Dry-Clean Profesional' },

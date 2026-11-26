@@ -13,6 +13,7 @@ import {
 } from 'lucide-vue-next'
 import {
   AVAILABLE_SIZES,
+  CATEGORY_MATERIAL_SPECS,
   RENTAL_CATEGORIES,
   SHOE_SIZES_MEN,
   SHOE_SIZES_WOMEN,
@@ -69,7 +70,7 @@ const form = reactive({
   imageUrl: sampleImages[0]!.url,
   gallery: [] as string[],
   ownerName: 'Ayu Prameswari',
-  fabricSpec: 'Bahan Premium + Gratis Dry-Clean / Sanitasi',
+  fabricSpec: CATEGORY_MATERIAL_SPECS['Kebaya Modern'],
 })
 
 const isUploadingImage = ref(false)
@@ -85,6 +86,7 @@ const sizeChoices = computed<readonly string[]>(() => {
 })
 
 watch(() => form.category, (cat) => {
+  form.fabricSpec = CATEGORY_MATERIAL_SPECS[cat]
   if (cat === 'High Heels') {
     form.sizes = ['37', '38', '39']
     if (!hasCustomUpload.value) form.imageUrl = sampleImages[5]!.url
@@ -259,7 +261,7 @@ async function handleSubmit() {
         gallery: form.gallery.length > 0 ? form.gallery : [form.imageUrl.trim()],
         ownerName: form.ownerName.trim() || 'Ayu Prameswari',
         specs: [
-          { label: 'Bahan & Detail', value: form.fabricSpec.trim() || 'Premium Boutique Quality' },
+          { label: 'Bahan & Detail', value: form.fabricSpec.trim() || CATEGORY_MATERIAL_SPECS[form.category] },
           { label: 'Ukuran Tersedia', value: form.sizes.join(', ') },
           { label: 'Lokasi', value: form.location.trim() },
           { label: 'Perawatan', value: 'Gratis Dry-Clean Profesional' },
