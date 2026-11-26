@@ -308,8 +308,8 @@ function printReceipt() {
               :reference-id="localBooking.id"
               :title="`SERUNI ATELIER • ${activeAccount.label}`"
               :subtitle="`${activeAccount.account} (${activeAccount.holder})`"
-              badge-text="QRIS Transfer Simulasi"
-              hint-text="Scan atau klik Bayar Sekarang di bawah — pembayaran transfer otomatis terverifikasi lunas."
+              badge-text="Dummy QRIS Transfer (Tanpa Scan)"
+              hint-text="Dummy QRIS siap pakai — tidak perlu scan kamera, klik Bayar Sekarang di bawah agar transfer otomatis lunas."
             />
           </div>
 

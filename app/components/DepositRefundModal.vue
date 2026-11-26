@@ -384,12 +384,12 @@ async function handleSubmit(action: 'request' | 'process') {
                   compact
                   :amount="isAdmin ? finalRefundAmount : props.booking.deposit"
                   :reference-id="`RFND-${props.booking.id}`"
-                  :title="`${activeMethodInfo.label} • QRIS Transfer`"
+                  :title="`${activeMethodInfo.label} • Dummy QRIS Transfer`"
                   :subtitle="refundAccount.trim() ? `Tujuan: ${refundAccount.trim()}` : `Tujuan: ${props.booking.renterName}`"
-                  badge-text="QRIS Transfer Simulasi"
+                  badge-text="Dummy QRIS Refund (Tanpa Scan)"
                   :hint-text="isAdmin
-                    ? 'QRIS simulasi aktif — klik Konfirmasi & Kembalikan di bawah untuk menyelesaikan transfer refund.'
-                    : 'QRIS simulasi pengembalian deposit — Admin akan mencairkan sesuai rekening di atas.'"
+                    ? 'Dummy QRIS aktif tanpa scan — klik Konfirmasi & Kembalikan di bawah untuk menyelesaikan transfer refund.'
+                    : 'Dummy QRIS pengembalian deposit — Admin akan mencairkan sesuai rekening di atas.'"
                 />
               </div>
               <div

@@ -1033,21 +1033,34 @@ function handlePaid(updated: BookingRecord) {
           </button>
         </div>
 
-        <div v-if="!isCashRefund">
-          <label for="refund-account" class="mb-1 block text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
-            No. Rekening / E-Wallet &amp; Nama Pemilik <span class="text-rose-500">*</span>
-          </label>
-          <input
-            id="refund-account"
-            v-model="depositRefundAccount"
-            type="text"
-            required
-            :placeholder="activeRefundMethodInfo.placeholder"
-            class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3 py-2 text-xs text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
-          >
-          <p class="mt-1 text-[10px] text-[#8A837A]">
-            Pastikan nomor rekening / e-wallet &amp; nama pemilik benar agar proses refund deposit lancar.
-          </p>
+        <div v-if="!isCashRefund" class="space-y-2.5">
+          <div>
+            <label for="refund-account" class="mb-1 block text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
+              No. Rekening / E-Wallet &amp; Nama Pemilik <span class="text-rose-500">*</span>
+            </label>
+            <input
+              id="refund-account"
+              v-model="depositRefundAccount"
+              type="text"
+              required
+              :placeholder="activeRefundMethodInfo.placeholder"
+              class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3 py-2 text-xs text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
+            >
+            <p class="mt-1 text-[10px] text-[#8A837A]">
+              Pastikan nomor rekening / e-wallet &amp; nama pemilik benar agar proses refund deposit lancar.
+            </p>
+          </div>
+
+          <!-- Dummy QRIS Preview for Transfer / E-Wallet Deposit Refund -->
+          <QrisCard
+            compact
+            :amount="props.item.deposit"
+            :reference-id="`RFND-${props.item.id.toUpperCase().slice(0, 10)}`"
+            :title="`DUMMY QRIS • Refund ${activeRefundMethodInfo.label}`"
+            :subtitle="depositRefundAccount.trim() ? `Tujuan: ${depositRefundAccount.trim()}` : 'Isi No. Rekening / E-Wallet di atas'"
+            badge-text="Dummy QRIS Refund"
+            hint-text="Simulasi QRIS pengembalian deposit — tidak perlu scan, dana refund dicairkan ke rekening tujuan saat busana kembali utuh."
+          />
         </div>
         <div
           v-else
@@ -1169,8 +1182,8 @@ function handlePaid(updated: BookingRecord) {
             :reference-id="props.item.id.toUpperCase().slice(0, 12)"
             :title="`SERUNI ATELIER • ${activePaymentInfo.label}`"
             :subtitle="activePaymentInfo.account"
-            badge-text="Langsung Bayar (Tanpa Scan)"
-            hint-text="Tidak perlu scan kamera — klik tombol bayar di bawah untuk langsung lunas via QRIS."
+            badge-text="Dummy QRIS (Tanpa Scan)"
+            hint-text="Dummy QRIS siap pakai — tidak perlu scan kamera, klik tombol Sewa Sekarang & Bayar QRIS di bawah untuk langsung lunas."
           />
         </div>
       </div>
