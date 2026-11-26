@@ -800,13 +800,13 @@ function handlePaid(updated: BookingRecord) {
 
           <div class="rounded-lg border border-[#C7D1C5] bg-[#EEF4ED] px-2.5 py-2">
             <span class="block text-[10px] font-medium uppercase tracking-wider text-[#455146]">
-              Uang Deposit (Jaminan)
+              Deposit Jaminan
             </span>
             <span class="mt-0.5 block font-serif text-sm font-semibold text-[#2B2A28]">
               {{ formatRupiah(props.item.deposit) }}
             </span>
-            <span class="mt-0.5 block text-[10px] font-medium text-[#556256]">
-              Kembali 100% saat utuh
+            <span class="mt-0.5 block text-[10px] font-medium leading-tight text-[#556256]">
+              Dikembalikan penuh saat baju pulang kondisi baik
             </span>
           </div>
         </div>
@@ -814,6 +814,32 @@ function handlePaid(updated: BookingRecord) {
         <div class="flex items-center justify-between border-t border-[#E3EAE1] pt-2 text-[11.5px]">
           <span class="font-medium text-[#455146]">Total Dibayar di Awal</span>
           <strong class="font-serif text-base font-semibold text-[#2B2A28]">{{ formatRupiah(totalPrice) }}</strong>
+        </div>
+
+        <!-- Late Return Fee & Return Deadline Info (immediately visible when dates are selected) -->
+        <div class="flex items-start gap-2 rounded-lg border border-[#EADBC3] bg-[#FDF8EF] px-2.5 py-2 text-[10.5px] leading-relaxed text-[#7A5622]">
+          <AlertTriangle class="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#B07A2A]" />
+          <div class="min-w-0 flex-1">
+            <p>
+              <strong class="text-[#5C3F14]">Denda Keterlambatan: Rp25.000 / hari</strong>
+              <template v-if="endDate">
+                jika pengembalian melewati <strong>{{ formatDate(endDate) }} pukul 21.00 WIB</strong>.
+              </template>
+              <template v-else>
+                jika melewati batas tanggal pengembalian.
+              </template>
+            </p>
+            <p class="mt-0.5 text-[10px] text-[#8C6730]">
+              Potongan deposit hanya berlaku jika terlambat, terkena noda permanen (Rp10rb), aksesoris hilang (Rp20rb), atau rusak (Rp30rb–Rp40rb).
+              <button
+                type="button"
+                class="font-semibold underline underline-offset-2 hover:text-[#2B2A28]"
+                @click="showTermsModal = true"
+              >
+                Lihat S&amp;K
+              </button>
+            </p>
+          </div>
         </div>
       </div>
 
@@ -1221,7 +1247,7 @@ function handlePaid(updated: BookingRecord) {
         </div>
 
         <!-- Grand Total Paid Upfront -->
-        <div class="space-y-1 border-t border-[#E5DFD6] pt-2.5">
+        <div class="space-y-1.5 border-t border-[#E5DFD6] pt-2.5">
           <div class="flex items-center justify-between">
             <div>
               <span class="block text-sm font-semibold text-[#2B2A28]">Total Bayar di Awal</span>
@@ -1231,6 +1257,10 @@ function handlePaid(updated: BookingRecord) {
               {{ formatRupiah(totalPrice) }}
             </span>
           </div>
+          <p class="flex items-center justify-between rounded-md bg-[#FDF8EF] px-2.5 py-1.5 text-[10.5px] text-[#7A5622]">
+            <span>Denda keterlambatan (&gt; {{ endDate ? formatDate(endDate) : 'tgl kembali' }})</span>
+            <strong class="text-[#5C3F14]">Rp25.000 / hari</strong>
+          </p>
         </div>
       </div>
 
