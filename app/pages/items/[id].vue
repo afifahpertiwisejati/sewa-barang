@@ -10,6 +10,7 @@ import type { RentalItemDetail } from '#shared/types/rental'
 
 const route = useRoute()
 const itemId = computed(() => String(route.params.id))
+const { setActiveProduct } = useWhatsAppConsult()
 
 const { data: item, pending, error, refresh } = await useFetch<RentalItemDetail>(
   () => `/api/items/${itemId.value}`,
@@ -20,6 +21,18 @@ const selectedColor = ref('')
 watch(
   item,
   (val) => {
+    if (val) {
+      setActiveProduct({
+        id: val.id,
+        name: val.name,
+        category: val.category,
+        pricePerDay: val.pricePerDay,
+      })
+    }
+    else {
+      setActiveProduct(null)
+    }
+
     if (val?.colors?.length) {
       if (!val.colors.some(c => c.name === selectedColor.value)) {
         selectedColor.value = val.colors[0]!.name
@@ -31,6 +44,10 @@ watch(
   },
   { immediate: true },
 )
+
+onBeforeUnmount(() => {
+  setActiveProduct(null)
+})
 
 useHead(() => ({
   title: item.value ? `${item.value.name} — Seruni Atelier` : 'Detail Busana — Seruni Atelier',

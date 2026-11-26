@@ -3,4 +3,5 @@
     <NuxtPage />
   </NuxtLayout>
   <SizeGuideModal />
+  <FloatingWhatsApp />
 </template>
