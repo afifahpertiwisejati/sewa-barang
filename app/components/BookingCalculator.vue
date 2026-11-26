@@ -2,6 +2,7 @@
 import {
   AlertTriangle,
   Banknote,
+  Calculator,
   Calendar,
   Check,
   CheckCircle2,
@@ -413,6 +414,10 @@ function handlePaid(updated: BookingRecord) {
           </span>
           <span class="text-xs text-[#8A837A]">/hari</span>
         </div>
+        <p class="mt-1 text-[11px] text-[#6B655E]">
+          + Deposit Jaminan <strong class="text-[#2B2A28]">{{ formatRupiah(props.item.deposit) }}</strong>
+          <span class="text-[#556256]"> (kembali 100%)</span>
+        </p>
       </div>
 
       <span
@@ -672,6 +677,34 @@ function handlePaid(updated: BookingRecord) {
         >
           <RefreshCw class="h-3 w-3" :class="{ 'animate-spin': props.isRefreshingStock }" />
         </button>
+      </div>
+
+      <!-- Instant Transparent Cost Preview (updates live as dates/delivery change) -->
+      <div class="rounded-xl border border-[#DCE4DB] bg-[#F7F9F6] p-3.5 text-xs">
+        <div class="flex items-center justify-between gap-2 border-b border-[#E3EAE1] pb-2">
+          <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#455146]">
+            <Calculator class="h-3.5 w-3.5 text-[#556256]" />
+            Estimasi Biaya ({{ durationDays }} Hari)
+          </span>
+          <span class="font-serif text-base font-semibold text-[#2B2A28]">
+            {{ formatRupiah(totalPrice) }}
+          </span>
+        </div>
+
+        <p class="mt-2 rounded-lg bg-white px-2.5 py-1.5 text-[11px] text-[#6B655E]">
+          <span class="font-medium text-[#2B2A28]">({{ formatRupiah(props.item.pricePerDay) }} &times; {{ durationDays }} hari)</span>
+          <span> + Deposit </span>
+          <span class="font-medium text-[#2B2A28]">{{ formatRupiah(props.item.deposit) }}</span>
+          <template v-if="deliveryFee > 0">
+            <span> + Kurir </span>
+            <span class="font-medium text-[#2B2A28]">{{ formatRupiah(deliveryFee) }}</span>
+          </template>
+        </p>
+
+        <div class="mt-2 flex items-center justify-between text-[11px] text-[#556256]">
+          <span>Biaya sewa bersih (setelah deposit kembali):</span>
+          <strong class="text-[#2B2A28]">{{ formatRupiah(subtotal + deliveryFee) }}</strong>
+        </div>
       </div>
 
       <!-- Delivery Method -->
@@ -943,43 +976,59 @@ function handlePaid(updated: BookingRecord) {
         </div>
       </div>
 
-      <!-- Real-Time Breakdown -->
-      <div class="space-y-2.5 rounded-xl bg-[#FAF8F5] p-4 text-xs">
+      <!-- Final Transparent Cost Breakdown before "Sewa Sekarang" -->
+      <div class="space-y-2.5 rounded-xl border border-[#E5DFD6] bg-[#FAF8F5] p-4 text-xs">
+        <div class="flex items-center justify-between border-b border-[#EAE4DC] pb-2">
+          <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#455146]">
+            <Calculator class="h-3.5 w-3.5 text-[#556256]" />
+            Rincian Estimasi Biaya
+          </span>
+          <span class="rounded-full bg-[#EFECE7] px-2 py-0.5 text-[10px] font-medium text-[#6B655E]">
+            {{ durationDays }} hari sewa
+          </span>
+        </div>
+
         <div class="flex items-center justify-between text-[#6B655E]">
-          <span>{{ formatRupiah(props.item.pricePerDay) }} &times; {{ durationDays }} hari</span>
-          <span class="font-medium text-[#2B2A28]">{{ formatRupiah(subtotal) }}</span>
+          <span>Harga Sewa ({{ formatRupiah(props.item.pricePerDay) }} &times; {{ durationDays }} hari)</span>
+          <span class="font-semibold text-[#2B2A28]">{{ formatRupiah(subtotal) }}</span>
+        </div>
+
+        <div class="flex items-center justify-between text-[#6B655E]">
+          <span class="inline-flex items-center gap-1.5">
+            Biaya Deposit Jaminan
+            <span class="rounded bg-[#E3E8E2] px-1.5 py-0.5 text-[10px] font-medium text-[#455146]">
+              Kembali 100%
+            </span>
+          </span>
+          <span class="font-semibold text-[#2B2A28]">+ {{ formatRupiah(props.item.deposit) }}</span>
         </div>
 
         <div class="flex items-center justify-between text-[#6B655E]">
           <span class="inline-flex items-center gap-1">
             <Sparkles class="h-3.5 w-3.5 text-[#556256]" />
-            Laundry Dry-Clean
+            Laundry Dry-Clean &amp; Sterilisasi
           </span>
-          <span class="font-medium text-[#556256]">Termasuk</span>
+          <span class="font-medium text-[#556256]">Gratis</span>
         </div>
 
         <div class="flex items-center justify-between text-[#6B655E]">
-          <span class="inline-flex items-center gap-1.5">
-            Deposit Keamanan
-            <span class="rounded bg-[#E3E8E2] px-1.5 py-0.5 text-[10px] font-medium text-[#455146]">
-              Refundable
-            </span>
-          </span>
-          <span class="font-medium text-[#2B2A28]">{{ formatRupiah(props.item.deposit) }}</span>
-        </div>
-
-        <div class="flex items-center justify-between text-[#6B655E]">
-          <span>{{ deliveryOption === 'kurir_antar' ? 'Biaya Kurir Antar' : 'Ambil Sendiri' }}</span>
+          <span>{{ deliveryOption === 'kurir_antar' ? 'Biaya Kurir Antar' : 'Ambil Sendiri di Butik' }}</span>
           <span class="font-medium" :class="deliveryFee === 0 ? 'text-[#556256]' : 'text-[#2B2A28]'">
-            {{ deliveryFee === 0 ? 'Gratis' : formatRupiah(deliveryFee) }}
+            {{ deliveryFee === 0 ? 'Gratis (Rp0)' : `+ ${formatRupiah(deliveryFee)}` }}
           </span>
         </div>
 
-        <div class="flex items-center justify-between border-t border-[#E8E3DC] pt-3">
-          <span class="text-sm font-semibold text-[#2B2A28]">Total Pembayaran</span>
-          <span class="font-serif text-lg font-medium text-[#2B2A28]">
-            {{ formatRupiah(totalPrice) }}
-          </span>
+        <div class="space-y-1 border-t border-[#E5DFD6] pt-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-[#2B2A28]">Total Bayar di Awal</span>
+            <span class="font-serif text-lg font-semibold text-[#2B2A28]">
+              {{ formatRupiah(totalPrice) }}
+            </span>
+          </div>
+          <p class="flex items-center justify-between text-[11px] text-[#556256]">
+            <span>Biaya bersih setelah deposit {{ formatRupiah(props.item.deposit) }} kembali</span>
+            <strong class="text-[#455146]">{{ formatRupiah(subtotal + deliveryFee) }}</strong>
+          </p>
         </div>
       </div>
 
@@ -1006,10 +1055,10 @@ function handlePaid(updated: BookingRecord) {
                 ? 'Memproses Pembayaran QRIS...'
                 : 'Memproses Pengajuan...'
               : !paymentMethod
-                ? 'Pilih Metode Pembayaran'
+                ? `Pilih Metode Pembayaran (${formatRupiah(totalPrice)})`
                 : isCashPayment
-                  ? 'Ajukan Sewa (Bayar Cash)'
-                  : `Bayar Langsung via QRIS — ${formatRupiah(totalPrice)}`
+                  ? `Sewa Sekarang (Bayar Cash) — ${formatRupiah(totalPrice)}`
+                  : `Sewa Sekarang & Bayar QRIS — ${formatRupiah(totalPrice)}`
           }}
         </span>
       </button>
@@ -1018,7 +1067,7 @@ function handlePaid(updated: BookingRecord) {
         :to="`/login?redirect=${encodeURIComponent(route.fullPath)}`"
         class="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#2B2A28] px-5 py-3 text-xs font-medium tracking-wide text-white transition-all hover:bg-[#3F3D39]"
       >
-        Masuk untuk Ajukan Sewa
+        Masuk &amp; Sewa Sekarang — {{ formatRupiah(totalPrice) }}
       </NuxtLink>
 
       <p class="flex items-center justify-center gap-1.5 text-center text-[11px] text-[#8A837A]">
