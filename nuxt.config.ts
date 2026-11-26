@@ -22,7 +22,7 @@ export default defineNuxtConfig({
     tidbCaPath: process.env.TIDB_CA_PATH || '',
     sessionSecret: process.env.SEWAIN_SESSION_SECRET || 'sewain-boutique-secret-key-2026',
     public: {
-      whatsappNumber: process.env.NUXT_PUBLIC_WHATSAPP_NUMBER || '6281234567890',
+      whatsappNumber: process.env.NUXT_PUBLIC_WHATSAPP_NUMBER || '6283130495590',
     },
   },
 

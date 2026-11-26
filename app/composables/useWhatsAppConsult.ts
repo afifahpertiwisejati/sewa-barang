@@ -12,8 +12,19 @@ export function useWhatsAppConsult() {
 
   const config = useRuntimeConfig()
   const whatsappNumber = computed(() => {
-    const raw = String(config.public?.whatsappNumber || '6281234567890')
-    return raw.replace(/[^0-9]/g, '') || '6281234567890'
+    const digits = String(config.public?.whatsappNumber || '6283130495590').replace(/[^0-9]/g, '')
+    if (!digits) return '6283130495590'
+    return digits.startsWith('0') ? `62${digits.slice(1)}` : digits
+  })
+
+  const displayPhone = computed(() => {
+    const local = whatsappNumber.value.startsWith('62')
+      ? `0${whatsappNumber.value.slice(2)}`
+      : whatsappNumber.value
+    if (local.length === 12) {
+      return `${local.slice(0, 4)}-${local.slice(4, 8)}-${local.slice(8)}`
+    }
+    return local
   })
 
   function setActiveProduct(product: WhatsAppProductContext | null) {
@@ -41,6 +52,7 @@ export function useWhatsAppConsult() {
     activeProduct,
     draftMessage,
     whatsappNumber,
+    displayPhone,
     setActiveProduct,
     openWidget,
     closeWidget,

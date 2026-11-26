@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ArrowRight, Ruler, ShieldCheck, Sparkles, Truck } from 'lucide-vue-next'
+import { ArrowRight, MessageCircle, Ruler, ShieldCheck, Sparkles, Truck } from 'lucide-vue-next'
 import { RENTAL_CATEGORIES } from '#shared/types/rental'
 
 const { filters } = useCatalogFilters()
 const { isAdmin, isLoggedIn } = useAuth()
 const { openSizeGuide } = useSizeGuide()
+const { displayPhone, buildWhatsAppUrl } = useWhatsAppConsult()
 const router = useRouter()
 const toast = useToast()
 const newsletterEmail = ref('')
@@ -96,7 +97,16 @@ function handleSubscribe() {
             <p class="mt-2.5 text-xs leading-relaxed text-[#D8DFD7]">
               Platform kurasi sewa kebaya modern, gaun pesta, dan busana lamaran di Indonesia. Tampil memukau tanpa harus memenuhi lemari.
             </p>
-            <div class="mt-5 flex items-center gap-3 text-xs text-[#D8DFD7]">
+            <a
+              :href="buildWhatsAppUrl('Halo Admin Seruni Atelier, saya ingin konsultasi sewa busana.')"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-white/20"
+            >
+              <MessageCircle class="h-3.5 w-3.5 text-[#86EFAC]" />
+              <span>WhatsApp: {{ displayPhone }}</span>
+            </a>
+            <div class="mt-4 flex items-center gap-3 text-xs text-[#D8DFD7]">
               <span class="rounded-full border border-white/20 px-2.5 py-1">IG</span>
               <span class="rounded-full border border-white/20 px-2.5 py-1">FB</span>
               <span class="rounded-full border border-white/20 px-2.5 py-1">TT</span>

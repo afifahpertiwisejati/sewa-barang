@@ -16,6 +16,7 @@ const {
   isOpen,
   activeProduct,
   draftMessage,
+  displayPhone,
   closeWidget,
   buildWhatsAppUrl,
 } = useWhatsAppConsult()
@@ -136,7 +137,7 @@ onBeforeUnmount(() => {
               </h3>
               <p class="mt-0.5 flex items-center gap-1 text-[11px] text-[#DCE4DB]">
                 <Clock class="h-3 w-3" />
-                Online &bull; 09.00–21.00 WIB
+                Online &bull; {{ displayPhone }}
               </p>
             </div>
           </div>
