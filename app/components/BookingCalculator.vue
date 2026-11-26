@@ -19,8 +19,12 @@ import {
 } from 'lucide-vue-next'
 import {
   DELIVERY_FEE_COURIER,
+  DRY_CLEAN_BUFFER_AFTER_DAYS,
+  DRY_CLEAN_BUFFER_BEFORE_DAYS,
   GUARANTEE_OPTIONS,
   PAYMENT_ACCOUNTS,
+  shiftIsoDate,
+  type BookedDateRange,
   type BookingRecord,
   type DeliveryOption,
   type GuaranteeType,
@@ -92,13 +96,10 @@ const selectedSize = ref(availableSizes.value[0] ?? 'All Size')
 const startDate = ref(defaultStart.value)
 const endDate = ref(defaultEnd.value)
 
-function getBookingConflict(size: string, colorName: string) {
-  if (!startDate.value || !endDate.value) return undefined
+function getVariantBookedRanges(size: string, colorName: string): BookedDateRange[] {
   const targetSize = size.trim().toLowerCase()
   const targetColor = colorName.trim().toLowerCase()
-  return props.item.bookedRanges.find((range) => {
-    const overlaps = startDate.value <= range.endDate && range.startDate <= endDate.value
-    if (!overlaps) return false
+  return props.item.bookedRanges.filter((range) => {
     if (range.selectedSize && range.selectedSize.trim().toLowerCase() !== targetSize) {
       return false
     }
@@ -109,18 +110,48 @@ function getBookingConflict(size: string, colorName: string) {
   })
 }
 
+function getBookingConflict(size: string, colorName: string): { range: BookedDateRange, kind: 'booked' | 'buffer' } | undefined {
+  if (!startDate.value || !endDate.value) return undefined
+  const matches = getVariantBookedRanges(size, colorName)
+
+  const direct = matches.find(
+    range => startDate.value <= range.endDate && range.startDate <= endDate.value,
+  )
+  if (direct) {
+    return { range: direct, kind: 'booked' }
+  }
+
+  const buffer = matches.find((range) => {
+    const bufferStart = shiftIsoDate(range.startDate, -DRY_CLEAN_BUFFER_BEFORE_DAYS)
+    const bufferEnd = shiftIsoDate(range.endDate, DRY_CLEAN_BUFFER_AFTER_DAYS)
+    return startDate.value <= bufferEnd && bufferStart <= endDate.value
+  })
+  if (buffer) {
+    return { range: buffer, kind: 'buffer' }
+  }
+
+  return undefined
+}
+
 const sizeStates = computed(() => {
   const offeredForColor = getOfferedSizesForColor(activeColor.value)
   return availableSizes.value.map((size) => {
     const inStockForColor = offeredForColor.includes(size)
-    const conflict = inStockForColor ? getBookingConflict(size, activeColor.value) : undefined
-    const available = inStockForColor && !conflict
+    const conflictInfo = inStockForColor ? getBookingConflict(size, activeColor.value) : undefined
+    const available = inStockForColor && !conflictInfo
     return {
       size,
       inStockForColor,
-      conflict,
+      conflict: conflictInfo?.range,
+      conflictKind: conflictInfo?.kind,
       available,
-      statusLabel: !inStockForColor ? 'Habis' : conflict ? 'Terpesan' : 'Tersedia',
+      statusLabel: !inStockForColor
+        ? 'Habis'
+        : conflictInfo?.kind === 'buffer'
+          ? 'Dry-Clean'
+          : conflictInfo?.kind === 'booked'
+            ? 'Terpesan'
+            : 'Tersedia',
     }
   })
 })
@@ -128,6 +159,15 @@ const sizeStates = computed(() => {
 const selectedSizeState = computed(() =>
   sizeStates.value.find(s => s.size === selectedSize.value) ?? sizeStates.value[0] ?? null,
 )
+
+const activeVariantBookedRanges = computed(() =>
+  getVariantBookedRanges(selectedSize.value, activeColor.value),
+)
+
+const calendarVariantLabel = computed(() => {
+  if (activeColor.value) return `${activeColor.value} · Size ${selectedSize.value}`
+  return `Size ${selectedSize.value}`
+})
 
 const activeColorReadyCount = computed(() =>
   sizeStates.value.filter(s => s.available).length,
@@ -238,7 +278,10 @@ const dateValidationError = computed(() => {
     return `Ukuran ${state.size}${colorSuffix} sedang kosong/habis. Pilih ukuran atau warna lain yang tersedia.`
   }
   if (state?.conflict) {
-    return `Ukuran ${state.size}${colorSuffix} sudah terpesan (${formatDate(state.conflict.startDate)} – ${formatDate(state.conflict.endDate)}). Pilih ukuran, warna, atau tanggal lain.`
+    if (state.conflictKind === 'buffer') {
+      return `Ukuran ${state.size}${colorSuffix} masuk masa jeda dry-clean & persiapan (1–2 hari sebelum/sesudah jadwal ${formatDate(state.conflict.startDate)} – ${formatDate(state.conflict.endDate)}). Pilih tanggal lain di kalender.`
+    }
+    return `Ukuran ${state.size}${colorSuffix} sudah terpesan (${formatDate(state.conflict.startDate)} – ${formatDate(state.conflict.endDate)}). Pilih ukuran, warna, atau tanggal lain di kalender.`
   }
   return ''
 })
@@ -558,21 +601,27 @@ function handlePaid(updated: BookingRecord) {
             :title="
               !sz.inStockForColor
                 ? `Ukuran ${sz.size} habis untuk warna ${activeColor || 'ini'}`
-                : sz.conflict
-                  ? `Terpesan ${formatDate(sz.conflict.startDate)} – ${formatDate(sz.conflict.endDate)}`
-                  : `Ukuran ${sz.size} tersedia`
+                : sz.conflictKind === 'buffer' && sz.conflict
+                  ? `Masa jeda dry-clean (sebelum/sesudah sewa ${formatDate(sz.conflict.startDate)} – ${formatDate(sz.conflict.endDate)})`
+                  : sz.conflict
+                    ? `Terpesan ${formatDate(sz.conflict.startDate)} – ${formatDate(sz.conflict.endDate)}`
+                    : `Ukuran ${sz.size} tersedia`
             "
             class="relative inline-flex min-w-[52px] items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
             :class="
               !sz.inStockForColor
                 ? 'cursor-not-allowed border-dashed border-[#E2DCD3] bg-[#F7F5F2] text-[#B0A89E]'
-                : sz.conflict
+                : sz.conflictKind === 'buffer'
                   ? (selectedSize === sz.size
-                      ? 'border-rose-400 bg-rose-50 text-rose-700'
-                      : 'border-dashed border-rose-200 bg-rose-50/50 text-rose-600/80 hover:border-rose-300')
-                  : (selectedSize === sz.size
-                      ? 'border-[#2B2A28] bg-[#2B2A28] text-white'
-                      : 'border-[#E8E3DC] bg-[#FAF8F5] text-[#2B2A28] hover:border-[#556256]')
+                      ? 'border-amber-400 bg-amber-50 text-amber-800'
+                      : 'border-dashed border-amber-300 bg-amber-50/60 text-amber-800/80 hover:border-amber-400')
+                  : sz.conflict
+                    ? (selectedSize === sz.size
+                        ? 'border-rose-400 bg-rose-50 text-rose-700'
+                        : 'border-dashed border-rose-200 bg-rose-50/50 text-rose-600/80 hover:border-rose-300')
+                    : (selectedSize === sz.size
+                        ? 'border-[#2B2A28] bg-[#2B2A28] text-white'
+                        : 'border-[#E8E3DC] bg-[#FAF8F5] text-[#2B2A28] hover:border-[#556256]')
             "
             @click="selectedSize = sz.size"
           >
@@ -580,7 +629,7 @@ function handlePaid(updated: BookingRecord) {
             <span
               v-if="!sz.available"
               class="text-[9px] font-semibold uppercase"
-              :class="!sz.inStockForColor ? 'text-[#A39C93]' : 'text-rose-600'"
+              :class="!sz.inStockForColor ? 'text-[#A39C93]' : sz.conflictKind === 'buffer' ? 'text-amber-700' : 'text-rose-600'"
             >
               {{ sz.statusLabel }}
             </span>
@@ -588,35 +637,14 @@ function handlePaid(updated: BookingRecord) {
         </div>
       </div>
 
-      <!-- Date Pickers -->
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label for="calc-start" class="mb-1 block text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
-            Tanggal Mulai
-          </label>
-          <input
-            id="calc-start"
-            v-model="startDate"
-            type="date"
-            :min="todayIso"
-            required
-            class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3 py-2 text-xs font-medium text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
-          >
-        </div>
-        <div>
-          <label for="calc-end" class="mb-1 block text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
-            Tanggal Selesai
-          </label>
-          <input
-            id="calc-end"
-            v-model="endDate"
-            type="date"
-            :min="startDate || todayIso"
-            required
-            class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3 py-2 text-xs font-medium text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
-          >
-        </div>
-      </div>
+      <!-- Interactive Availability Calendar (with disabled booked & dry-clean buffer dates) -->
+      <AvailabilityCalendar
+        v-model:start-date="startDate"
+        v-model:end-date="endDate"
+        :min-date="todayIso"
+        :booked-ranges="activeVariantBookedRanges"
+        :variant-label="calendarVariantLabel"
+      />
 
       <!-- Real-Time Availability Feedback -->
       <div

@@ -1,5 +1,8 @@
 import {
   DELIVERY_FEE_COURIER,
+  DRY_CLEAN_BUFFER_AFTER_DAYS,
+  DRY_CLEAN_BUFFER_BEFORE_DAYS,
+  shiftIsoDate,
   type BookingRecord,
   type CreateBookingPayload,
   type DeliveryOption,
@@ -123,8 +126,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
 
   const activeBookings = await listActiveBookingsByItemId(item.id)
   const hasMultipleColors = Boolean(item.colors && item.colors.length > 1)
-  const conflict = activeBookings.find((b) => {
-    if (!datesOverlap(startDate, endDate, b.startDate, b.endDate)) return false
+  const sameVariantBookings = activeBookings.filter((b) => {
     const sameSize = b.selectedSize.trim().toLowerCase() === selectedSize.trim().toLowerCase()
     if (!sameSize) return false
     if (hasMultipleColors && selectedColor && b.selectedColor) {
@@ -133,13 +135,33 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     return true
   })
 
-  if (conflict) {
+  const directConflict = sameVariantBookings.find(
+    b => datesOverlap(startDate, endDate, b.startDate, b.endDate),
+  )
+
+  if (directConflict) {
     const variantLabel = selectedColor
       ? `Ukuran ${selectedSize} warna ${selectedColor}`
       : `Ukuran ${selectedSize}`
     throw createError({
       statusCode: 409,
-      statusMessage: `${variantLabel} sudah terpesan pada ${conflict.startDate} s/d ${conflict.endDate}. Silakan pilih ukuran, warna, atau tanggal lain.`,
+      statusMessage: `${variantLabel} sudah terpesan pada ${directConflict.startDate} s/d ${directConflict.endDate}. Silakan pilih ukuran, warna, atau tanggal lain.`,
+    })
+  }
+
+  const bufferConflict = sameVariantBookings.find((b) => {
+    const bufferStart = shiftIsoDate(b.startDate, -DRY_CLEAN_BUFFER_BEFORE_DAYS)
+    const bufferEnd = shiftIsoDate(b.endDate, DRY_CLEAN_BUFFER_AFTER_DAYS)
+    return datesOverlap(startDate, endDate, bufferStart, bufferEnd)
+  })
+
+  if (bufferConflict) {
+    const variantLabel = selectedColor
+      ? `Ukuran ${selectedSize} warna ${selectedColor}`
+      : `Ukuran ${selectedSize}`
+    throw createError({
+      statusCode: 409,
+      statusMessage: `${variantLabel} sedang dalam masa jeda dry-clean & sterilisasi (1–2 hari sebelum/sesudah sewa ${bufferConflict.startDate} s/d ${bufferConflict.endDate}). Silakan pilih tanggal lain.`,
     })
   }
 

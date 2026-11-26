@@ -269,3 +269,18 @@ export interface NotificationsListResponse {
 }
 
 export const DELIVERY_FEE_COURIER = 15000
+export const DRY_CLEAN_BUFFER_BEFORE_DAYS = 1
+export const DRY_CLEAN_BUFFER_AFTER_DAYS = 2
+
+export function shiftIsoDate(isoDate: string, deltaDays: number): string {
+  const parts = isoDate.split('-').map(Number)
+  const y = parts[0]
+  const m = parts[1]
+  const d = parts[2]
+  if (!y || !m || !d) return isoDate
+  const dt = new Date(Date.UTC(y, m - 1, d + deltaDays))
+  const yy = dt.getUTCFullYear()
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(dt.getUTCDate()).padStart(2, '0')
+  return `${yy}-${mm}-${dd}`
+}
