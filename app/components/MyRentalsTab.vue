@@ -512,7 +512,7 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
                     {{ formatRupiah(booking.deposit) }}
                   </strong>
                   <span v-if="booking.depositRefundMethod" class="text-[11px] text-[#8A837A]">
-                    &rarr; {{ DEPOSIT_REFUND_METHODS[booking.depositRefundMethod]?.label }}
+                    &rarr; {{ DEPOSIT_REFUND_METHODS[booking.depositRefundMethod]?.label }}<template v-if="booking.depositRefundAccount"> ({{ booking.depositRefundAccount }})</template>
                   </span>
                   <span v-if="booking.depositRefundReference" class="font-mono text-[10px] text-[#556256]">
                     &bull; {{ booking.depositRefundReference }}

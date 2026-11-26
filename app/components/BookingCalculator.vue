@@ -12,14 +12,17 @@ import {
   Loader2,
   ReceiptText,
   RefreshCw,
+  RotateCcw,
   Ruler,
   Shield,
   Sparkles,
   Store,
   Truck,
+  Wallet,
 } from 'lucide-vue-next'
 import {
   DELIVERY_FEE_COURIER,
+  DEPOSIT_REFUND_METHODS,
   DRY_CLEAN_BUFFER_AFTER_DAYS,
   DRY_CLEAN_BUFFER_BEFORE_DAYS,
   GUARANTEE_OPTIONS,
@@ -28,6 +31,7 @@ import {
   type BookedDateRange,
   type BookingRecord,
   type DeliveryOption,
+  type DepositRefundMethod,
   type GuaranteeType,
   type PaymentMethod,
   type RentalItemDetail,
@@ -206,6 +210,8 @@ const qrisChannels = [
   'ShopeePay',
 ]
 const guaranteeNumber = ref('')
+const depositRefundMethod = ref<DepositRefundMethod>('transfer_bca')
+const depositRefundAccount = ref('')
 const copiedAccount = ref(false)
 const renterName = ref(user.value?.name || '')
 const renterPhone = ref(user.value?.phone || '')
@@ -227,6 +233,12 @@ const activePaymentInfo = computed(() => (paymentMethod.value ? PAYMENT_ACCOUNTS
 const isCashPayment = computed(() => paymentMethod.value === 'cash')
 const guaranteeOptions = Object.entries(GUARANTEE_OPTIONS) as [GuaranteeType, { label: string, description: string }][]
 const activeGuaranteeInfo = computed(() => GUARANTEE_OPTIONS[guaranteeType.value])
+const depositRefundMethods = Object.entries(DEPOSIT_REFUND_METHODS) as [
+  DepositRefundMethod,
+  { label: string, placeholder: string, isCash?: boolean },
+][]
+const activeRefundMethodInfo = computed(() => DEPOSIT_REFUND_METHODS[depositRefundMethod.value])
+const isCashRefund = computed(() => depositRefundMethod.value === 'cash')
 
 watch(
   [sizeStates, activeColor],
@@ -261,7 +273,8 @@ const subtotal = computed(() => durationDays.value * props.item.pricePerDay)
 const deliveryFee = computed(() =>
   deliveryOption.value === 'kurir_antar' ? DELIVERY_FEE_COURIER : 0,
 )
-const totalPrice = computed(() => subtotal.value + props.item.deposit + deliveryFee.value)
+const rentalTotal = computed(() => subtotal.value + deliveryFee.value)
+const totalPrice = computed(() => rentalTotal.value + props.item.deposit)
 
 const dateValidationError = computed(() => {
   if (!startDate.value || !endDate.value) {
@@ -287,6 +300,12 @@ const dateValidationError = computed(() => {
   return ''
 })
 
+const hasValidRefundAccount = computed(() => {
+  if (props.item.deposit <= 0) return true
+  if (isCashRefund.value) return true
+  return depositRefundAccount.value.trim().length >= 5
+})
+
 const canSubmit = computed(() => {
   return (
     !isSubmitting.value
@@ -296,6 +315,7 @@ const canSubmit = computed(() => {
     && renterName.value.trim().length >= 2
     && renterPhone.value.trim().length >= 8
     && guaranteeNumber.value.trim().length >= 4
+    && hasValidRefundAccount.value
   )
 })
 
@@ -315,7 +335,10 @@ async function copyAccountNumber() {
 
 async function handleBookingSubmit() {
   if (!canSubmit.value || !paymentMethod.value) {
-    submitError.value = dateValidationError.value || 'Mohon lengkapi data penyewa, nomor kartu jaminan, dan pilih metode pembayaran.'
+    submitError.value = dateValidationError.value
+      || (!hasValidRefundAccount.value
+        ? 'Mohon isi nomor rekening / e-wallet & nama pemilik untuk tujuan pengembalian deposit.'
+        : 'Mohon lengkapi data penyewa, nomor kartu jaminan, dan pilih metode pembayaran.')
     return
   }
 
@@ -335,6 +358,10 @@ async function handleBookingSubmit() {
         paymentMethod: paymentMethod.value,
         guaranteeType: guaranteeType.value,
         guaranteeNumber: guaranteeNumber.value.trim(),
+        depositRefundMethod: props.item.deposit > 0 ? depositRefundMethod.value : undefined,
+        depositRefundAccount: props.item.deposit > 0
+          ? (isCashRefund.value ? 'Tunai di Butik Seruni Atelier' : depositRefundAccount.value.trim())
+          : undefined,
         renterName: renterName.value.trim(),
         renterPhone: renterPhone.value.trim(),
         notes: notes.value.trim() || undefined,
@@ -343,6 +370,7 @@ async function handleBookingSubmit() {
 
     createdBooking.value = booking
     guaranteeNumber.value = ''
+    depositRefundAccount.value = ''
     await refreshNuxtData('nav-bookings')
     emit('booked', booking)
 
@@ -443,7 +471,12 @@ function handlePaid(updated: BookingRecord) {
             Kode Booking: <strong class="text-[#2B2A28]">{{ createdBooking.id }}</strong><br>
             Ukuran: <strong class="text-[#2B2A28]">{{ createdBooking.selectedSize }}</strong><br>
             Jadwal: {{ formatDate(createdBooking.startDate) }} – {{ formatDate(createdBooking.endDate) }} ({{ createdBooking.durationDays }} hari)<br>
-            Total: <strong class="text-[#2B2A28]">{{ formatRupiah(createdBooking.totalPrice) }}</strong><br>
+            Total Biaya Sewa: <strong class="text-[#2B2A28]">{{ formatRupiah(createdBooking.subtotal + createdBooking.deliveryFee) }}</strong><br>
+            Uang Deposit (Jaminan): <strong class="text-[#2B2A28]">{{ formatRupiah(createdBooking.deposit) }}</strong>
+            <template v-if="createdBooking.depositRefundMethod">
+              (Refund ke {{ DEPOSIT_REFUND_METHODS[createdBooking.depositRefundMethod]?.label }}<template v-if="createdBooking.depositRefundAccount"> &bull; {{ createdBooking.depositRefundAccount }}</template>)
+            </template><br>
+            Total Bayar di Awal: <strong class="text-[#2B2A28]">{{ formatRupiah(createdBooking.totalPrice) }}</strong><br>
             Pembayaran:
             <strong class="text-[#2B2A28]">
               {{
@@ -679,31 +712,47 @@ function handlePaid(updated: BookingRecord) {
         </button>
       </div>
 
-      <!-- Instant Transparent Cost Preview (updates live as dates/delivery change) -->
-      <div class="rounded-xl border border-[#DCE4DB] bg-[#F7F9F6] p-3.5 text-xs">
+      <!-- Instant Transparent Cost Preview (strictly separates Rental Cost vs Refundable Deposit) -->
+      <div class="space-y-2 rounded-xl border border-[#DCE4DB] bg-[#F7F9F6] p-3.5 text-xs">
         <div class="flex items-center justify-between gap-2 border-b border-[#E3EAE1] pb-2">
           <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#455146]">
             <Calculator class="h-3.5 w-3.5 text-[#556256]" />
-            Estimasi Biaya ({{ durationDays }} Hari)
+            Ringkasan Biaya ({{ durationDays }} Hari)
           </span>
-          <span class="font-serif text-base font-semibold text-[#2B2A28]">
-            {{ formatRupiah(totalPrice) }}
+          <span class="text-[10.5px] font-medium text-[#556256]">
+            Biaya Sewa &amp; Deposit Terpisah
           </span>
         </div>
 
-        <p class="mt-2 rounded-lg bg-white px-2.5 py-1.5 text-[11px] text-[#6B655E]">
-          <span class="font-medium text-[#2B2A28]">({{ formatRupiah(props.item.pricePerDay) }} &times; {{ durationDays }} hari)</span>
-          <span> + Deposit </span>
-          <span class="font-medium text-[#2B2A28]">{{ formatRupiah(props.item.deposit) }}</span>
-          <template v-if="deliveryFee > 0">
-            <span> + Kurir </span>
-            <span class="font-medium text-[#2B2A28]">{{ formatRupiah(deliveryFee) }}</span>
-          </template>
-        </p>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="rounded-lg border border-[#E8E3DC] bg-white px-2.5 py-2">
+            <span class="block text-[10px] font-medium uppercase tracking-wider text-[#8A837A]">
+              Total Biaya Sewa
+            </span>
+            <span class="mt-0.5 block font-serif text-sm font-semibold text-[#2B2A28]">
+              {{ formatRupiah(rentalTotal) }}
+            </span>
+            <span class="mt-0.5 block text-[10px] text-[#8A837A]">
+              {{ formatRupiah(props.item.pricePerDay) }} &times; {{ durationDays }} hr{{ deliveryFee > 0 ? ' + kurir' : '' }}
+            </span>
+          </div>
 
-        <div class="mt-2 flex items-center justify-between text-[11px] text-[#556256]">
-          <span>Biaya sewa bersih (setelah deposit kembali):</span>
-          <strong class="text-[#2B2A28]">{{ formatRupiah(subtotal + deliveryFee) }}</strong>
+          <div class="rounded-lg border border-[#C7D1C5] bg-[#EEF4ED] px-2.5 py-2">
+            <span class="block text-[10px] font-medium uppercase tracking-wider text-[#455146]">
+              Uang Deposit (Jaminan)
+            </span>
+            <span class="mt-0.5 block font-serif text-sm font-semibold text-[#2B2A28]">
+              {{ formatRupiah(props.item.deposit) }}
+            </span>
+            <span class="mt-0.5 block text-[10px] font-medium text-[#556256]">
+              Kembali 100% saat utuh
+            </span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between border-t border-[#E3EAE1] pt-2 text-[11.5px]">
+          <span class="font-medium text-[#455146]">Total Dibayar di Awal</span>
+          <strong class="font-serif text-base font-semibold text-[#2B2A28]">{{ formatRupiah(totalPrice) }}</strong>
         </div>
       </div>
 
@@ -859,6 +908,67 @@ function handlePaid(updated: BookingRecord) {
         </div>
       </div>
 
+      <!-- Skema Pengembalian Deposit & Rekening / E-Wallet Tujuan Refund -->
+      <div v-if="props.item.deposit > 0" class="space-y-3 border-t border-[#EFECE7] pt-4">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
+            <RotateCcw class="h-3.5 w-3.5 text-[#556256]" />
+            Tujuan Refund Deposit ({{ formatRupiah(props.item.deposit) }})
+          </div>
+          <span class="rounded bg-[#E3E8E2] px-1.5 py-0.5 text-[10px] font-medium text-[#455146]">
+            Kembali 100%
+          </span>
+        </div>
+
+        <p class="rounded-lg border border-[#DCE4DB] bg-[#F3F5F2] px-3 py-2 text-[11px] leading-relaxed text-[#455146]">
+          <strong>Skema Pengembalian Dana:</strong> Uang deposit sebesar <strong>{{ formatRupiah(props.item.deposit) }}</strong> dipisahkan dari biaya sewa dan akan ditransfer kembali <strong>100% penuh</strong> ke rekening / e-wallet Anda setelah busana dikembalikan dalam kondisi baik &amp; lengkap.
+        </p>
+
+        <div class="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+          <button
+            v-for="[key, opt] in depositRefundMethods"
+            :key="key"
+            type="button"
+            class="flex items-center justify-center gap-1 rounded-lg border px-2 py-2 text-[11px] font-medium transition-all"
+            :class="[
+              key === 'cash' ? 'col-span-2 sm:col-span-3' : '',
+              depositRefundMethod === key
+                ? 'border-[#2B2A28] bg-[#2B2A28] text-white'
+                : 'border-[#E8E3DC] bg-[#FAF8F5] text-[#6B655E] hover:border-[#556256] hover:text-[#2B2A28]',
+            ]"
+            @click="depositRefundMethod = key"
+          >
+            <Wallet v-if="!opt.isCash" class="h-3 w-3 shrink-0" />
+            <Banknote v-else class="h-3 w-3 shrink-0" />
+            <span class="truncate">{{ opt.label }}</span>
+          </button>
+        </div>
+
+        <div v-if="!isCashRefund">
+          <label for="refund-account" class="mb-1 block text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
+            No. Rekening / E-Wallet &amp; Nama Pemilik <span class="text-rose-500">*</span>
+          </label>
+          <input
+            id="refund-account"
+            v-model="depositRefundAccount"
+            type="text"
+            required
+            :placeholder="activeRefundMethodInfo.placeholder"
+            class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3 py-2 text-xs text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
+          >
+          <p class="mt-1 text-[10px] text-[#8A837A]">
+            Pastikan nomor rekening / e-wallet &amp; nama pemilik benar agar proses refund deposit lancar.
+          </p>
+        </div>
+        <div
+          v-else
+          class="flex items-start gap-2 rounded-lg border border-[#DCE4DB] bg-[#FAF8F5] px-3 py-2 text-[11px] text-[#556256]"
+        >
+          <Banknote class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>Deposit {{ formatRupiah(props.item.deposit) }} akan dikembalikan langsung secara tunai di butik saat busana dikembalikan dalam kondisi baik.</span>
+        </div>
+      </div>
+
       <!-- Payment Method (Direct Checkout, No Photo Upload) -->
       <div class="space-y-3 border-t border-[#EFECE7] pt-4">
         <div class="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
@@ -976,59 +1086,86 @@ function handlePaid(updated: BookingRecord) {
         </div>
       </div>
 
-      <!-- Final Transparent Cost Breakdown before "Sewa Sekarang" -->
-      <div class="space-y-2.5 rounded-xl border border-[#E5DFD6] bg-[#FAF8F5] p-4 text-xs">
+      <!-- Final Transparent Cost Breakdown: Strictly Separates Rental Cost vs Refundable Deposit -->
+      <div class="space-y-3 rounded-xl border border-[#E5DFD6] bg-[#FAF8F5] p-4 text-xs">
         <div class="flex items-center justify-between border-b border-[#EAE4DC] pb-2">
           <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#455146]">
             <Calculator class="h-3.5 w-3.5 text-[#556256]" />
-            Rincian Estimasi Biaya
+            Rincian Biaya &amp; Deposit
           </span>
           <span class="rounded-full bg-[#EFECE7] px-2 py-0.5 text-[10px] font-medium text-[#6B655E]">
             {{ durationDays }} hari sewa
           </span>
         </div>
 
-        <div class="flex items-center justify-between text-[#6B655E]">
-          <span>Harga Sewa ({{ formatRupiah(props.item.pricePerDay) }} &times; {{ durationDays }} hari)</span>
-          <span class="font-semibold text-[#2B2A28]">{{ formatRupiah(subtotal) }}</span>
+        <!-- Section 1: Total Biaya Sewa -->
+        <div class="space-y-1.5 rounded-lg border border-[#EAE4DC] bg-white p-3">
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-[#8A837A]">
+            1. Total Biaya Sewa (Biaya Final)
+          </p>
+          <div class="flex items-center justify-between text-[#6B655E]">
+            <span>Harga Sewa ({{ formatRupiah(props.item.pricePerDay) }} &times; {{ durationDays }} hari)</span>
+            <span class="font-medium text-[#2B2A28]">{{ formatRupiah(subtotal) }}</span>
+          </div>
+          <div class="flex items-center justify-between text-[#6B655E]">
+            <span class="inline-flex items-center gap-1">
+              <Sparkles class="h-3 w-3 text-[#556256]" />
+              Laundry Dry-Clean &amp; Sterilisasi
+            </span>
+            <span class="font-medium text-[#556256]">Gratis</span>
+          </div>
+          <div class="flex items-center justify-between text-[#6B655E]">
+            <span>{{ deliveryOption === 'kurir_antar' ? 'Biaya Kurir Antar' : 'Ambil Sendiri di Butik' }}</span>
+            <span class="font-medium" :class="deliveryFee === 0 ? 'text-[#556256]' : 'text-[#2B2A28]'">
+              {{ deliveryFee === 0 ? 'Gratis (Rp0)' : `+ ${formatRupiah(deliveryFee)}` }}
+            </span>
+          </div>
+          <div class="flex items-center justify-between border-t border-[#F0EBE4] pt-1.5 font-semibold text-[#2B2A28]">
+            <span>Total Biaya Sewa</span>
+            <span>{{ formatRupiah(rentalTotal) }}</span>
+          </div>
         </div>
 
-        <div class="flex items-center justify-between text-[#6B655E]">
-          <span class="inline-flex items-center gap-1.5">
-            Biaya Deposit Jaminan
-            <span class="rounded bg-[#E3E8E2] px-1.5 py-0.5 text-[10px] font-medium text-[#455146]">
+        <!-- Section 2: Uang Deposit / Jaminan (Terpisah) -->
+        <div v-if="props.item.deposit > 0" class="space-y-1.5 rounded-lg border border-[#C7D1C5] bg-[#F3F5F2] p-3">
+          <div class="flex items-center justify-between">
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-[#455146]">
+              2. Uang Deposit / Jaminan (Terpisah)
+            </p>
+            <span class="rounded bg-white px-1.5 py-0.5 text-[9.5px] font-semibold text-[#455146]">
               Kembali 100%
             </span>
-          </span>
-          <span class="font-semibold text-[#2B2A28]">+ {{ formatRupiah(props.item.deposit) }}</span>
+          </div>
+          <div class="flex items-center justify-between text-[#455146]">
+            <span>Deposit Keamanan Busana</span>
+            <span class="font-semibold text-[#2B2A28]">+ {{ formatRupiah(props.item.deposit) }}</span>
+          </div>
+          <p class="border-t border-[#DCE4DB] pt-1.5 text-[10.5px] leading-relaxed text-[#556256]">
+            <strong class="text-[#2B2A28]">Tujuan Refund:</strong>
+            {{ activeRefundMethodInfo.label }}
+            <template v-if="isCashRefund">
+              (Tunai di Butik)
+            </template>
+            <template v-else-if="depositRefundAccount.trim()">
+              &bull; {{ depositRefundAccount.trim() }}
+            </template>
+            <template v-else>
+              &bull; <span class="text-rose-600">Mohon isi No. Rekening / E-Wallet di atas</span>
+            </template>
+          </p>
         </div>
 
-        <div class="flex items-center justify-between text-[#6B655E]">
-          <span class="inline-flex items-center gap-1">
-            <Sparkles class="h-3.5 w-3.5 text-[#556256]" />
-            Laundry Dry-Clean &amp; Sterilisasi
-          </span>
-          <span class="font-medium text-[#556256]">Gratis</span>
-        </div>
-
-        <div class="flex items-center justify-between text-[#6B655E]">
-          <span>{{ deliveryOption === 'kurir_antar' ? 'Biaya Kurir Antar' : 'Ambil Sendiri di Butik' }}</span>
-          <span class="font-medium" :class="deliveryFee === 0 ? 'text-[#556256]' : 'text-[#2B2A28]'">
-            {{ deliveryFee === 0 ? 'Gratis (Rp0)' : `+ ${formatRupiah(deliveryFee)}` }}
-          </span>
-        </div>
-
-        <div class="space-y-1 border-t border-[#E5DFD6] pt-3">
+        <!-- Grand Total Paid Upfront -->
+        <div class="space-y-1 border-t border-[#E5DFD6] pt-2.5">
           <div class="flex items-center justify-between">
-            <span class="text-sm font-semibold text-[#2B2A28]">Total Bayar di Awal</span>
+            <div>
+              <span class="block text-sm font-semibold text-[#2B2A28]">Total Bayar di Awal</span>
+              <span class="text-[10px] text-[#8A837A]">Biaya Sewa ({{ formatRupiah(rentalTotal) }}) + Deposit ({{ formatRupiah(props.item.deposit) }})</span>
+            </div>
             <span class="font-serif text-lg font-semibold text-[#2B2A28]">
               {{ formatRupiah(totalPrice) }}
             </span>
           </div>
-          <p class="flex items-center justify-between text-[11px] text-[#556256]">
-            <span>Biaya bersih setelah deposit {{ formatRupiah(props.item.deposit) }} kembali</span>
-            <strong class="text-[#455146]">{{ formatRupiah(subtotal + deliveryFee) }}</strong>
-          </p>
         </div>
       </div>
 

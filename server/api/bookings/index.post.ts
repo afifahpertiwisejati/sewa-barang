@@ -1,11 +1,13 @@
 import {
   DELIVERY_FEE_COURIER,
+  DEPOSIT_REFUND_METHODS,
   DRY_CLEAN_BUFFER_AFTER_DAYS,
   DRY_CLEAN_BUFFER_BEFORE_DAYS,
   shiftIsoDate,
   type BookingRecord,
   type CreateBookingPayload,
   type DeliveryOption,
+  type DepositRefundMethod,
   type GuaranteeType,
   type PaymentMethod,
   type PaymentStatus,
@@ -55,6 +57,15 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
       ? body.guaranteeType
       : 'ktp'
   const guaranteeNumber = typeof body?.guaranteeNumber === 'string' ? body.guaranteeNumber.trim() : ''
+  const allowedRefundMethods = Object.keys(DEPOSIT_REFUND_METHODS) as DepositRefundMethod[]
+  const depositRefundMethod: DepositRefundMethod | undefined
+    = body?.depositRefundMethod && allowedRefundMethods.includes(body.depositRefundMethod)
+      ? body.depositRefundMethod
+      : undefined
+  const rawRefundAccount = typeof body?.depositRefundAccount === 'string' ? body.depositRefundAccount.trim() : ''
+  const depositRefundAccount = depositRefundMethod === 'cash'
+    ? 'Tunai di Butik Seruni Atelier'
+    : (rawRefundAccount || undefined)
   const renterName = typeof body?.renterName === 'string' ? body.renterName.trim() : ''
   const renterPhone = typeof body?.renterPhone === 'string' ? body.renterPhone.trim() : ''
   const notes = typeof body?.notes === 'string' ? body.notes.trim() : undefined
@@ -102,6 +113,13 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
   const item = await findItemById(itemId)
   if (!item) {
     throw createError({ statusCode: 404, statusMessage: 'Busana tidak ditemukan.' })
+  }
+
+  if (item.deposit > 0 && depositRefundMethod && depositRefundMethod !== 'cash' && (!depositRefundAccount || depositRefundAccount.length < 5)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Mohon isi nomor rekening / e-wallet dan nama pemilik untuk pengembalian deposit.',
+    })
   }
 
   const matchedColor = typeof body?.selectedColor === 'string' && body.selectedColor.trim()
@@ -209,6 +227,8 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     guaranteeNumber: guaranteeNumber || undefined,
     guaranteeStatus: 'menunggu_serah',
     depositStatus: 'ditahan',
+    depositRefundMethod,
+    depositRefundAccount,
     depositDeduction: 0,
     notes,
     createdAt: new Date().toISOString(),
