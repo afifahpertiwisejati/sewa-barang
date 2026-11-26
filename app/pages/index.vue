@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, PackageSearch, RotateCcw, SlidersHorizontal, X } from 'lucide-vue-next'
+import { ArrowRight, PackageSearch, RotateCcw, Ruler, SlidersHorizontal, X } from 'lucide-vue-next'
 import {
   RENTAL_CATEGORIES,
   type CategoryFilter,
@@ -14,6 +14,7 @@ useHead({
 })
 
 const { filters, hasActiveFilters, resetFilters } = useCatalogFilters()
+const { openSizeGuide } = useSizeGuide()
 const showMobileFilter = ref(false)
 
 const queryParams = computed(() => {
@@ -157,7 +158,16 @@ onMounted(() => {
           </p>
         </div>
 
-        <div class="flex items-center gap-2.5">
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-[#D7E0D5] bg-[#F3F5F2] px-3 py-2 text-xs font-medium text-[#455146] transition-colors hover:border-[#556256] hover:bg-[#E7EDE5]"
+            @click="openSizeGuide(filters.category)"
+          >
+            <Ruler class="h-3.5 w-3.5 text-[#556256]" />
+            Panduan Ukuran
+          </button>
+
           <button
             v-if="hasActiveFilters"
             type="button"

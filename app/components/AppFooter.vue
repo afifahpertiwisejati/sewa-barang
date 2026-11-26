@@ -4,6 +4,7 @@ import { RENTAL_CATEGORIES } from '#shared/types/rental'
 
 const { filters } = useCatalogFilters()
 const { isAdmin, isLoggedIn } = useAuth()
+const { openSizeGuide } = useSizeGuide()
 const router = useRouter()
 const toast = useToast()
 const newsletterEmail = ref('')
@@ -64,17 +65,22 @@ function handleSubscribe() {
           </div>
         </div>
 
-        <div class="flex items-center gap-3">
-          <Ruler class="h-6 w-6 shrink-0 text-[#556256]" stroke-width="1.5" />
+        <button
+          type="button"
+          class="group -m-2 flex items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-[#EFECE7]/80"
+          @click="openSizeGuide('wanita')"
+        >
+          <Ruler class="h-6 w-6 shrink-0 text-[#556256] transition-transform group-hover:scale-105" stroke-width="1.5" />
           <div>
-            <p class="text-xs font-semibold text-[#2B2A28] sm:text-sm">
+            <p class="text-xs font-semibold text-[#2B2A28] group-hover:text-[#556256] sm:text-sm">
               Ukuran Lengkap S–XL
             </p>
-            <p class="text-[11px] text-[#8A837A]">
-              Tersedia panduan lingkar dada
+            <p class="inline-flex items-center gap-1 text-[11px] font-medium text-[#556256] underline decoration-[#556256]/40 underline-offset-2 group-hover:decoration-[#556256]">
+              Lihat panduan lingkar dada
+              <ArrowRight class="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
             </p>
           </div>
-        </div>
+        </button>
       </div>
     </section>
 
@@ -122,6 +128,15 @@ function handleSubscribe() {
                 <NuxtLink to="/cara-sewa" class="transition-colors hover:text-white">
                   Cara Sewa &amp; S&amp;K
                 </NuxtLink>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  class="transition-colors hover:text-white"
+                  @click="openSizeGuide()"
+                >
+                  Panduan Ukuran (Size Chart)
+                </button>
               </li>
               <li>
                 <NuxtLink to="/dashboard" class="transition-colors hover:text-white">

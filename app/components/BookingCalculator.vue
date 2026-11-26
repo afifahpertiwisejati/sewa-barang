@@ -10,6 +10,7 @@ import {
   IdCard,
   Loader2,
   ReceiptText,
+  Ruler,
   Shield,
   Sparkles,
   Store,
@@ -39,6 +40,7 @@ const emit = defineEmits<{
 const route = useRoute()
 const { user, isLoggedIn } = useAuth()
 const { filters } = useCatalogFilters()
+const { openSizeGuide } = useSizeGuide()
 const { formatRupiah, formatDate, calculateDurationDays, getOffsetIsoDate } = useFormatters()
 const toast = useToast()
 
@@ -397,9 +399,19 @@ function handlePaid(updated: BookingRecord) {
 
       <!-- Size Selector -->
       <div>
-        <span class="mb-2 block text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
-          Pilih Ukuran
-        </span>
+        <div class="mb-2 flex items-center justify-between gap-2">
+          <span class="text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
+            Pilih Ukuran
+          </span>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 text-[11px] font-medium text-[#556256] underline decoration-[#556256]/40 underline-offset-2 transition-colors hover:text-[#2B2A28] hover:decoration-[#2B2A28]"
+            @click="openSizeGuide(props.item.category)"
+          >
+            <Ruler class="h-3 w-3" />
+            Panduan Ukuran
+          </button>
+        </div>
         <div class="flex flex-wrap gap-2">
           <button
             v-for="size in availableSizes"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUpDown, RotateCcw, SlidersHorizontal } from 'lucide-vue-next'
+import { ArrowUpDown, RotateCcw, Ruler, SlidersHorizontal } from 'lucide-vue-next'
 import type { SortOption } from '#shared/types/rental'
 import { DEFAULT_MAX_PRICE } from '../composables/useCatalogFilters'
 
@@ -9,6 +9,7 @@ const props = defineProps<{
 }>()
 
 const { filters, hasActiveFilters, resetFilters } = useCatalogFilters()
+const { openSizeGuide } = useSizeGuide()
 const { formatRupiah } = useFormatters()
 
 const sliderMax = computed(() => Math.max(DEFAULT_MAX_PRICE, Math.ceil(props.maxCatalogPrice / 25000) * 25000))
@@ -124,8 +125,20 @@ const sortOptions: { value: SortOption, label: string }[] = [
       </label>
     </div>
 
+    <!-- Size Guide Button -->
+    <div class="mt-5 border-t border-[#EFECE7] pt-5">
+      <button
+        type="button"
+        class="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D7E0D5] bg-[#F3F5F2] px-3.5 py-2.5 text-xs font-medium text-[#455146] transition-colors hover:border-[#556256] hover:bg-[#E7EDE5]"
+        @click="openSizeGuide(filters.category)"
+      >
+        <Ruler class="h-3.5 w-3.5 text-[#556256]" />
+        Panduan Ukuran (LD &amp; cm)
+      </button>
+    </div>
+
     <!-- Count -->
-    <div class="mt-6 rounded-xl bg-[#FAF8F5] px-3.5 py-2.5 text-center text-xs text-[#6B655E]">
+    <div class="mt-4 rounded-xl bg-[#FAF8F5] px-3.5 py-2.5 text-center text-xs text-[#6B655E]">
       Menampilkan <span class="font-semibold text-[#2B2A28]">{{ props.totalResults }}</span> barang pilihan
     </div>
   </aside>

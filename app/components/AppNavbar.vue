@@ -4,6 +4,7 @@ import {
   LogIn,
   LogOut,
   Menu,
+  Ruler,
   Search,
   ShieldCheck,
   ShoppingBag,
@@ -16,6 +17,7 @@ const router = useRouter()
 const mobileOpen = ref(false)
 const { count: wishlistCount } = useWishlist()
 const { user, isLoggedIn, isAdmin, logout } = useAuth()
+const { openSizeGuide } = useSizeGuide()
 const toast = useToast()
 
 const { data: bookings } = useFetch<BookingRecord[]>('/api/bookings', {
@@ -111,6 +113,14 @@ async function handleLogout() {
         >
           Cara Sewa &amp; S&amp;K
         </NuxtLink>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 py-1 text-sm font-medium text-[#6B655E] transition-colors hover:text-[#2B2A28]"
+          @click="openSizeGuide()"
+        >
+          <Ruler class="h-3.5 w-3.5 text-[#556256]" />
+          Panduan Ukuran
+        </button>
         <NuxtLink
           v-if="isLoggedIn"
           to="/dashboard"
@@ -273,6 +283,14 @@ async function handleLogout() {
           <NuxtLink to="/cara-sewa" class="rounded-lg px-3 py-2.5 text-sm font-medium text-[#6B655E] hover:bg-[#EFECE7]">
             Cara Sewa &amp; S&amp;K
           </NuxtLink>
+          <button
+            type="button"
+            class="flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#6B655E] hover:bg-[#EFECE7] hover:text-[#2B2A28]"
+            @click="mobileOpen = false; openSizeGuide()"
+          >
+            <Ruler class="h-4 w-4 text-[#556256]" />
+            Panduan Ukuran (Size Chart)
+          </button>
           <NuxtLink
             v-if="isLoggedIn"
             to="/dashboard"
