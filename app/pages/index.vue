@@ -381,7 +381,7 @@ onMounted(() => {
           <div class="col-span-5 h-full overflow-hidden bg-[#EFECE7]">
             <img
               src="/images/dress-sage-brokat.jpg"
-              alt="Sewakan dress dan kebaya modern Anda"
+              alt="Sewa dress dan kebaya modern pilihan"
               class="h-full w-full object-cover object-top"
             >
           </div>
