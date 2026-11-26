@@ -174,7 +174,7 @@ export const PAYMENT_ACCOUNTS: Record<PaymentMethod, { label: string, account: s
   },
   gopay: {
     label: 'GoPay / E-Wallet',
-    account: '0811-2233-4455',
+    account: '0831-3049-5590',
     holder: 'a.n. Ayu Prameswari (Seruni Atelier)',
   },
 }
