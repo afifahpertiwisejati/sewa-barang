@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowRight, Loader2, Lock, ShieldCheck, Sparkles } from 'lucide-vue-next'
+import { ArrowRight, Eye, EyeOff, Loader2, Lock, ShieldCheck, Sparkles } from 'lucide-vue-next'
 
 useHead({
   title: 'Masuk & Daftar — Seruni Atelier',
@@ -28,6 +28,7 @@ const adminForm = reactive({
   username: '',
   password: '',
 })
+const showAdminPassword = ref(false)
 
 const registerForm = reactive({
   name: '',
@@ -365,15 +366,26 @@ async function handleRegisterSubmit() {
             <label for="admin-password" class="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-[#6B655E]">
               Kata Sandi Admin
             </label>
-            <input
-              id="admin-password"
-              v-model="adminForm.password"
-              type="password"
-              required
-              autocomplete="current-password"
-              placeholder="Masukkan kata sandi admin"
-              class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3.5 py-2.5 text-sm text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
-            >
+            <div class="relative">
+              <input
+                id="admin-password"
+                v-model="adminForm.password"
+                :type="showAdminPassword ? 'text' : 'password'"
+                required
+                autocomplete="current-password"
+                placeholder="Masukkan kata sandi admin"
+                class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] py-2.5 pl-3.5 pr-10 text-sm text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
+              >
+              <button
+                type="button"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-[#8A837A] hover:text-[#2B2A28]"
+                :aria-label="showAdminPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'"
+                @click="showAdminPassword = !showAdminPassword"
+              >
+                <EyeOff v-if="showAdminPassword" class="h-4 w-4" />
+                <Eye v-else class="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           <p
