@@ -37,10 +37,13 @@ export default defineNuxtConfig({
       title: 'Seruni Atelier — Sewa Kebaya, Dress Sopan, Jas Pria & Sepatu Pesta',
       htmlAttrs: {
         lang: 'id',
+        translate: 'no',
+        class: 'notranslate',
       },
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'google', content: 'notranslate' },
         {
           name: 'description',
           content:
