@@ -101,6 +101,17 @@ async function handleLogout() {
           Baru Masuk
         </NuxtLink>
         <NuxtLink
+          to="/cara-sewa"
+          class="relative py-1 text-sm font-medium transition-colors"
+          :class="
+            route.path === '/cara-sewa'
+              ? 'text-[#2B2A28] after:absolute after:bottom-0 after:left-0 after:h-[1.5px] after:w-full after:bg-[#2B2A28]'
+              : 'text-[#6B655E] hover:text-[#2B2A28]'
+          "
+        >
+          Cara Sewa &amp; S&amp;K
+        </NuxtLink>
+        <NuxtLink
           v-if="isLoggedIn"
           to="/dashboard"
           class="relative py-1 text-sm font-medium transition-colors"
@@ -258,6 +269,9 @@ async function handleLogout() {
           </NuxtLink>
           <NuxtLink to="/#katalog" class="rounded-lg px-3 py-2.5 text-sm font-medium text-[#6B655E] hover:bg-[#EFECE7]">
             Koleksi
+          </NuxtLink>
+          <NuxtLink to="/cara-sewa" class="rounded-lg px-3 py-2.5 text-sm font-medium text-[#6B655E] hover:bg-[#EFECE7]">
+            Cara Sewa &amp; S&amp;K
           </NuxtLink>
           <NuxtLink
             v-if="isLoggedIn"

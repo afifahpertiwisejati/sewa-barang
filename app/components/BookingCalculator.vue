@@ -70,6 +70,7 @@ const deliveryOption = ref<DeliveryOption>('ambil_sendiri')
 const paymentMethod = ref<PaymentMethod | ''>('')
 const selectedQrisChannel = ref('BCA Mobile')
 const activeModalBooking = ref<BookingRecord | null>(null)
+const showTermsModal = ref(false)
 const guaranteeType = ref<GuaranteeType>('ktp')
 
 const qrisChannels = [
@@ -811,8 +812,17 @@ function handlePaid(updated: BookingRecord) {
       </NuxtLink>
 
       <p class="flex items-center justify-center gap-1.5 text-center text-[11px] text-[#8A837A]">
-        <Shield class="h-3.5 w-3.5 text-[#556256]" />
-        Deposit {{ formatRupiah(props.item.deposit) }} &amp; kartu jaminan kembali 100% saat pengembalian.
+        <Shield class="h-3.5 w-3.5 shrink-0 text-[#556256]" />
+        <span>
+          Deposit {{ formatRupiah(props.item.deposit) }} kembali 100% sesuai
+          <button
+            type="button"
+            class="font-semibold text-[#556256] underline underline-offset-2 hover:text-[#2B2A28]"
+            @click="showTermsModal = true"
+          >
+            Cara Sewa &amp; S&amp;K
+          </button>.
+        </span>
       </p>
     </form>
 
@@ -821,6 +831,12 @@ function handlePaid(updated: BookingRecord) {
       :booking="activeModalBooking"
       @close="activeModalBooking = null"
       @paid="handlePaid"
+    />
+
+    <!-- Quick Cara Sewa & S&K Modal -->
+    <TermsModal
+      :open="showTermsModal"
+      @close="showTermsModal = false"
     />
   </div>
 </template>

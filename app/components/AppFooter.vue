@@ -119,6 +119,11 @@ function handleSubscribe() {
                 </NuxtLink>
               </li>
               <li>
+                <NuxtLink to="/cara-sewa" class="transition-colors hover:text-white">
+                  Cara Sewa &amp; S&amp;K
+                </NuxtLink>
+              </li>
+              <li>
                 <NuxtLink to="/dashboard" class="transition-colors hover:text-white">
                   Penyewaan Saya
                 </NuxtLink>
