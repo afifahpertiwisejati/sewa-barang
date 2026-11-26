@@ -20,6 +20,12 @@ export type PaymentStatus = 'belum_bayar' | 'bayar_ditempat' | 'terverifikasi'
 export type GuaranteeType = 'ktp' | 'sim' | 'ktm' | 'kk_paspor'
 export type GuaranteeStatus = 'menunggu_serah' | 'dititipkan' | 'dikembalikan'
 export type HandoverStatus = 'belum_diterima' | 'diterima'
+export type FulfillmentStage
+  = | 'menunggu_pembayaran'
+    | 'dry_clean'
+    | 'siap_ambil_kirim'
+    | 'sedang_disewa'
+    | 'selesai_deposit'
 export type DepositStatus = 'ditahan' | 'menunggu_pengembalian' | 'dikembalikan' | 'dipotong'
 export type DepositRefundMethod = 'transfer_bca' | 'transfer_mandiri' | 'transfer_bri' | 'gopay' | 'dana' | 'ovo' | 'cash'
 export type SortOption = 'newest' | 'price_asc' | 'rating_desc'
@@ -112,6 +118,7 @@ export interface BookingRecord {
   handoverStatus?: HandoverStatus
   handoverRecipient?: string
   handoverConfirmedAt?: string
+  fulfillmentStage?: FulfillmentStage
   depositStatus?: DepositStatus
   depositRefundMethod?: DepositRefundMethod
   depositRefundAccount?: string
@@ -286,4 +293,51 @@ export function shiftIsoDate(isoDate: string, deltaDays: number): string {
   const mm = String(dt.getUTCMonth() + 1).padStart(2, '0')
   const dd = String(dt.getUTCDate()).padStart(2, '0')
   return `${yy}-${mm}-${dd}`
+}
+
+export function resolveBookingStage(booking: BookingRecord): {
+  stage: FulfillmentStage
+  stepIndex: number
+  isDepositPending: boolean
+} {
+  if (booking.status === 'selesai') {
+    const isDepositPending = booking.deposit > 0
+      && booking.depositStatus !== 'dikembalikan'
+      && booking.depositStatus !== 'dipotong'
+    return {
+      stage: 'selesai_deposit',
+      stepIndex: 4,
+      isDepositPending,
+    }
+  }
+
+  if (booking.paymentStatus === 'belum_bayar') {
+    return {
+      stage: 'menunggu_pembayaran',
+      stepIndex: 0,
+      isDepositPending: false,
+    }
+  }
+
+  if (booking.handoverStatus === 'diterima' || booking.fulfillmentStage === 'sedang_disewa') {
+    return {
+      stage: 'sedang_disewa',
+      stepIndex: 3,
+      isDepositPending: false,
+    }
+  }
+
+  if (booking.fulfillmentStage === 'siap_ambil_kirim') {
+    return {
+      stage: 'siap_ambil_kirim',
+      stepIndex: 2,
+      isDepositPending: false,
+    }
+  }
+
+  return {
+    stage: 'dry_clean',
+    stepIndex: 1,
+    isDepositPending: false,
+  }
 }

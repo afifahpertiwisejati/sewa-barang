@@ -66,6 +66,10 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     booking.paymentPaidAt = new Date().toISOString()
   }
 
+  if (!booking.fulfillmentStage || booking.fulfillmentStage === 'menunggu_pembayaran') {
+    booking.fulfillmentStage = 'dry_clean'
+  }
+
   await updateBooking(booking)
 
   const methodLabel = PAYMENT_ACCOUNTS[booking.paymentMethod]?.label || booking.paymentMethod

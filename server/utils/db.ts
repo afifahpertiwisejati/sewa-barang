@@ -8,6 +8,7 @@ import type {
   DeliveryOption,
   DepositRefundMethod,
   DepositStatus,
+  FulfillmentStage,
   GuaranteeStatus,
   GuaranteeType,
   HandoverStatus,
@@ -98,6 +99,7 @@ interface BookingRow extends RowDataPacket {
   handover_status: HandoverStatus | null
   handover_recipient: string | null
   handover_confirmed_at: string | null
+  fulfillment_stage: FulfillmentStage | null
   deposit_status: DepositStatus | null
   deposit_refund_method: DepositRefundMethod | null
   deposit_refund_account: string | null
@@ -252,6 +254,7 @@ function mapBookingRow(row: BookingRow): BookingRecord {
     handoverStatus: row.handover_status ?? 'belum_diterima',
     ...(row.handover_recipient ? { handoverRecipient: row.handover_recipient } : {}),
     ...(row.handover_confirmed_at ? { handoverConfirmedAt: row.handover_confirmed_at } : {}),
+    ...(row.fulfillment_stage ? { fulfillmentStage: row.fulfillment_stage } : {}),
     depositStatus: row.deposit_status ?? (row.status === 'selesai' ? 'dikembalikan' : 'ditahan'),
     ...(row.deposit_refund_method ? { depositRefundMethod: row.deposit_refund_method } : {}),
     ...(row.deposit_refund_account ? { depositRefundAccount: row.deposit_refund_account } : {}),
@@ -316,6 +319,7 @@ async function initializeSchemaAndSeed(): Promise<Pool> {
         (SELECT COUNT(*) FROM items) AS items_cnt,
         (SELECT deposit_status FROM bookings LIMIT 1) AS dep_col,
         (SELECT handover_status FROM bookings LIMIT 1) AS handover_col,
+        (SELECT fulfillment_stage FROM bookings LIMIT 1) AS stage_col,
         (SELECT COUNT(*) FROM notifications) AS notif_cnt,
         (SELECT COUNT(*) FROM uploaded_files) AS files_cnt`,
     )
@@ -430,6 +434,7 @@ async function initializeSchemaAndSeed(): Promise<Pool> {
       handover_status ENUM('belum_diterima', 'diterima') NOT NULL DEFAULT 'belum_diterima',
       handover_recipient VARCHAR(150) NULL,
       handover_confirmed_at VARCHAR(40) NULL,
+      fulfillment_stage VARCHAR(32) NULL,
       deposit_status ENUM('ditahan', 'menunggu_pengembalian', 'dikembalikan', 'dipotong') NOT NULL DEFAULT 'ditahan',
       deposit_refund_method VARCHAR(40) NULL,
       deposit_refund_account VARCHAR(191) NULL,
@@ -454,6 +459,7 @@ async function initializeSchemaAndSeed(): Promise<Pool> {
     `ALTER TABLE bookings ADD COLUMN IF NOT EXISTS handover_status ENUM('belum_diterima', 'diterima') NOT NULL DEFAULT 'belum_diterima'`,
     `ALTER TABLE bookings ADD COLUMN IF NOT EXISTS handover_recipient VARCHAR(150) NULL`,
     `ALTER TABLE bookings ADD COLUMN IF NOT EXISTS handover_confirmed_at VARCHAR(40) NULL`,
+    `ALTER TABLE bookings ADD COLUMN IF NOT EXISTS fulfillment_stage VARCHAR(32) NULL`,
     `ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_status ENUM('ditahan', 'menunggu_pengembalian', 'dikembalikan', 'dipotong') NOT NULL DEFAULT 'ditahan'`,
     `ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_refund_method VARCHAR(40) NULL`,
     `ALTER TABLE bookings ADD COLUMN IF NOT EXISTS deposit_refund_account VARCHAR(191) NULL`,
@@ -838,11 +844,11 @@ export async function insertBooking(b: BookingRecord): Promise<void> {
        delivery_option, delivery_fee, total_price, status, payment_method,
        payment_status, payment_channel, payment_reference, payment_paid_at,
        guarantee_type, guarantee_number, guarantee_status,
-       handover_status, handover_recipient, handover_confirmed_at,
+       handover_status, handover_recipient, handover_confirmed_at, fulfillment_stage,
        deposit_status, deposit_refund_method, deposit_refund_account,
        deposit_refund_amount, deposit_deduction, deposit_refund_reference,
        deposit_refund_note, deposit_refunded_at, notes, created_at
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       b.id,
       b.userId ?? null,
@@ -877,6 +883,7 @@ export async function insertBooking(b: BookingRecord): Promise<void> {
       b.handoverStatus ?? 'belum_diterima',
       b.handoverRecipient ?? null,
       b.handoverConfirmedAt ?? null,
+      b.fulfillmentStage ?? null,
       b.depositStatus ?? 'ditahan',
       b.depositRefundMethod ?? null,
       b.depositRefundAccount ?? null,
@@ -908,6 +915,7 @@ export async function updateBooking(b: BookingRecord): Promise<void> {
          handover_status = ?,
          handover_recipient = ?,
          handover_confirmed_at = ?,
+         fulfillment_stage = ?,
          deposit_status = ?,
          deposit_refund_method = ?,
          deposit_refund_account = ?,
@@ -930,6 +938,7 @@ export async function updateBooking(b: BookingRecord): Promise<void> {
       b.handoverStatus ?? 'belum_diterima',
       b.handoverRecipient ?? null,
       b.handoverConfirmedAt ?? null,
+      b.fulfillmentStage ?? null,
       b.depositStatus ?? 'ditahan',
       b.depositRefundMethod ?? null,
       b.depositRefundAccount ?? null,

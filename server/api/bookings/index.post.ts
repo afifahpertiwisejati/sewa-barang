@@ -233,6 +233,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     guaranteeType,
     guaranteeNumber: guaranteeNumber || undefined,
     guaranteeStatus: 'menunggu_serah',
+    fulfillmentStage: paymentStatus === 'belum_bayar' ? 'menunggu_pembayaran' : 'dry_clean',
     depositStatus: 'ditahan',
     depositRefundMethod,
     depositRefundAccount,

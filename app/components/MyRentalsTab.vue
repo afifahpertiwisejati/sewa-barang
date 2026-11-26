@@ -26,6 +26,7 @@ import {
   type BookingRecord,
   type BookingStatus,
   type DepositStatus,
+  type FulfillmentStage,
   type GuaranteeStatus,
   type PaymentStatus,
 } from '#shared/types/rental'
@@ -199,6 +200,31 @@ async function changeGuaranteeStatus(booking: BookingRecord, guaranteeStatus: Gu
   }
   catch {
     toast.push('Gagal Memperbarui Status Jaminan', { type: 'error' })
+  }
+  finally {
+    updatingId.value = null
+  }
+}
+
+async function advanceFulfillmentStage(booking: BookingRecord, fulfillmentStage: FulfillmentStage) {
+  updatingId.value = booking.id
+  try {
+    await $fetch<BookingRecord>(`/api/bookings/${booking.id}`, {
+      method: 'PATCH',
+      body: { fulfillmentStage },
+    })
+    emit('updated')
+    toast.push('Tahapan Pesanan Diperbarui', {
+      description: fulfillmentStage === 'siap_ambil_kirim'
+        ? (booking.deliveryOption === 'kurir_antar'
+            ? `Pesanan ${booking.id} ditandai Siap Dikirim Kurir.`
+            : `Pesanan ${booking.id} ditandai Siap Diambil di Butik.`)
+        : `Status tahapan pesanan ${booking.id} berhasil diperbarui.`,
+      type: 'success',
+    })
+  }
+  catch {
+    toast.push('Gagal Memperbarui Tahapan', { type: 'error' })
   }
   finally {
     updatingId.value = null
@@ -734,6 +760,15 @@ function getGuaranteeBadge(status: GuaranteeStatus) {
             </p>
           </div>
         </div>
+
+        <!-- 5-Stage Visual Order Tracking & Return Countdown -->
+        <OrderStatusTracker
+          :booking="booking"
+          :is-admin="isAdmin"
+          :updating="updatingId === booking.id"
+          @advance-stage="stage => advanceFulfillmentStage(booking, stage)"
+          @confirm-handover="openHandoverModal(booking)"
+        />
       </article>
     </div>
 

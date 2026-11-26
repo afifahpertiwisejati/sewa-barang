@@ -1,6 +1,7 @@
 import type {
   BookingRecord,
   BookingStatus,
+  FulfillmentStage,
   GuaranteeStatus,
   GuaranteeType,
   HandoverStatus,
@@ -22,6 +23,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     guaranteeStatus?: GuaranteeStatus
     handoverStatus?: HandoverStatus
     handoverRecipient?: string
+    fulfillmentStage?: FulfillmentStage
   }>(event)
 
   if (!id) {
@@ -44,6 +46,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
   const prevPaymentStatus = booking.paymentStatus
   const prevGuaranteeStatus = booking.guaranteeStatus
   const prevHandoverStatus = booking.handoverStatus || 'belum_diterima'
+  const prevStage = booking.fulfillmentStage
 
   // Update rental status (aktif / selesai / dibatalkan)
   if (body?.status !== undefined) {
@@ -60,6 +63,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     booking.status = body.status
     if (body.status === 'selesai') {
       booking.guaranteeStatus = 'dikembalikan'
+      booking.fulfillmentStage = 'selesai_deposit'
       if (booking.deposit > 0 && (!booking.depositStatus || booking.depositStatus === 'ditahan')) {
         booking.depositStatus = 'menunggu_pengembalian'
       }
@@ -114,6 +118,9 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
         const prefix = booking.paymentMethod === 'cash' ? 'CASH' : 'TRX'
         booking.paymentReference = `${prefix}-${ymd}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
       }
+      if (!booking.fulfillmentStage || booking.fulfillmentStage === 'menunggu_pembayaran') {
+        booking.fulfillmentStage = 'dry_clean'
+      }
     }
   }
 
@@ -151,11 +158,33 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
         : booking.renterName
       booking.handoverRecipient = recipient
       booking.handoverConfirmedAt = new Date().toISOString()
+      booking.fulfillmentStage = 'sedang_disewa'
     }
     else {
       booking.handoverRecipient = undefined
       booking.handoverConfirmedAt = undefined
     }
+  }
+
+  // Update fulfillment tracking stage (Admin only)
+  if (body?.fulfillmentStage !== undefined) {
+    if (user.role !== 'admin') {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'Hanya Admin Butik yang dapat memperbarui tahapan proses pesanan.',
+      })
+    }
+    const allowedStages: FulfillmentStage[] = [
+      'menunggu_pembayaran',
+      'dry_clean',
+      'siap_ambil_kirim',
+      'sedang_disewa',
+      'selesai_deposit',
+    ]
+    if (!allowedStages.includes(body.fulfillmentStage)) {
+      throw createError({ statusCode: 400, statusMessage: 'Tahapan pesanan tidak valid.' })
+    }
+    booking.fulfillmentStage = body.fulfillmentStage
   }
 
   await updateBooking(booking)
@@ -280,6 +309,39 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
         actionUrl: '/dashboard',
       }),
     )
+  }
+
+  // Admin updated fulfillment stage (e.g. dry-clean done -> ready for pickup/delivery)
+  if (booking.fulfillmentStage && booking.fulfillmentStage !== prevStage && booking.userId) {
+    if (booking.fulfillmentStage === 'siap_ambil_kirim') {
+      const actionLabel = booking.deliveryOption === 'kurir_antar'
+        ? 'siap dikirim oleh kurir kami'
+        : 'sudah siap diambil di butik Seruni Atelier'
+      notifTasks.push(
+        createNotification({
+          userId: booking.userId,
+          recipientRole: 'user',
+          type: 'system',
+          title: booking.deliveryOption === 'kurir_antar' ? 'Busana Siap Dikirim Kurir' : 'Busana Siap Diambil di Butik',
+          message: `Busana ${booking.itemName} (${booking.id}) sudah selesai dry-clean & steam dan ${actionLabel}.`,
+          bookingId: booking.id,
+          actionUrl: '/dashboard',
+        }),
+      )
+    }
+    else if (booking.fulfillmentStage === 'dry_clean' && prevStage === 'menunggu_pembayaran') {
+      notifTasks.push(
+        createNotification({
+          userId: booking.userId,
+          recipientRole: 'user',
+          type: 'system',
+          title: 'Busana Masuk Proses Dry-Clean & Persiapan',
+          message: `Pesanan ${booking.itemName} (${booking.id}) telah dikonfirmasi dan sedang dalam tahap dry-clean & QC sebelum hari sewa.`,
+          bookingId: booking.id,
+          actionUrl: '/dashboard',
+        }),
+      )
+    }
   }
 
   if (notifTasks.length > 0) {
