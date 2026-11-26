@@ -25,6 +25,7 @@ const loginForm = reactive({
 })
 
 const adminForm = reactive({
+  username: '',
   password: '',
 })
 
@@ -89,15 +90,16 @@ async function handleLoginSubmit(customEmail?: string, customPassword?: string) 
 
 async function handleAdminLoginSubmit() {
   errorMessage.value = ''
+  const username = adminForm.username.trim()
   const password = adminForm.password.trim()
-  if (!password) {
-    errorMessage.value = 'Mohon masukkan kata sandi admin.'
+  if (!username || !password) {
+    errorMessage.value = 'Mohon masukkan username dan kata sandi admin.'
     return
   }
 
   isSubmitting.value = true
   try {
-    const loggedInUser = await login('admin@seruni.id', password)
+    const loggedInUser = await login(username, password, 'admin')
     if (!loggedInUser) throw new Error('Gagal masuk.')
 
     toast.push(`Selamat datang, ${loggedInUser.name}!`, {
@@ -108,7 +110,7 @@ async function handleAdminLoginSubmit() {
     await router.push('/admin')
   }
   catch {
-    errorMessage.value = 'Kata sandi admin salah. Akses ini khusus untuk Admin Butik.'
+    errorMessage.value = 'Username atau kata sandi admin salah. Akses ini khusus untuk Admin Butik.'
   }
   finally {
     isSubmitting.value = false
@@ -332,7 +334,7 @@ async function handleRegisterSubmit() {
           </button>
         </form>
 
-        <!-- Admin Secret Password Form -->
+        <!-- Admin Secret Login Form -->
         <form v-else class="mt-6 space-y-4" @submit.prevent="handleAdminLoginSubmit">
           <div class="rounded-xl border border-[#D7E0D5] bg-[#F4F7F3] p-3.5 text-xs text-[#4A574B]">
             <div class="flex items-center gap-2 font-semibold text-[#2B2A28]">
@@ -340,8 +342,23 @@ async function handleRegisterSubmit() {
               Akses Khusus Admin Butik
             </div>
             <p class="mt-1 text-[11px] leading-relaxed text-[#5C685D]">
-              Masukkan kata sandi rahasia admin untuk mengelola katalog, pesanan masuk, dan pengembalian deposit.
+              Masukkan username dan kata sandi rahasia admin untuk mengelola katalog, pesanan masuk, dan pengembalian deposit.
             </p>
+          </div>
+
+          <div>
+            <label for="admin-username" class="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-[#6B655E]">
+              Username Admin
+            </label>
+            <input
+              id="admin-username"
+              v-model="adminForm.username"
+              type="text"
+              required
+              autocomplete="username"
+              placeholder="Masukkan username admin"
+              class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3.5 py-2.5 text-sm text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
+            >
           </div>
 
           <div>
@@ -354,7 +371,7 @@ async function handleRegisterSubmit() {
               type="password"
               required
               autocomplete="current-password"
-              placeholder="Masukkan kata sandi rahasia admin"
+              placeholder="Masukkan kata sandi admin"
               class="w-full rounded-lg border border-[#E8E3DC] bg-[#FAF8F5] px-3.5 py-2.5 text-sm text-[#2B2A28] focus:border-[#556256] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#556256]"
             >
           </div>

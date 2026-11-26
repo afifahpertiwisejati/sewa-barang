@@ -24,10 +24,10 @@ export function useAuth() {
     return user.value
   }
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, mode?: 'user' | 'admin') => {
     const res = await $fetch<AuthResponse>('/api/auth/login', {
       method: 'POST',
-      body: { email, password },
+      body: { email, password, mode },
     })
     user.value = res.user
     loaded.value = true
