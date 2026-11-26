@@ -101,25 +101,45 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
     throw createError({ statusCode: 404, statusMessage: 'Busana tidak ditemukan.' })
   }
 
-  const selectedSize = typeof body?.selectedSize === 'string' && body.selectedSize.trim()
-    ? body.selectedSize.trim()
-    : (item.sizes[0] ?? 'All Size')
   const matchedColor = typeof body?.selectedColor === 'string' && body.selectedColor.trim()
     ? item.colors?.find(c => c.name.toLowerCase() === body.selectedColor!.trim().toLowerCase())
     : item.colors?.[0]
   const selectedColor = matchedColor?.name
     || (typeof body?.selectedColor === 'string' && body.selectedColor.trim() ? body.selectedColor.trim() : undefined)
+  const variantSizes = matchedColor?.sizes?.length ? matchedColor.sizes : item.sizes
+  const selectedSize = typeof body?.selectedSize === 'string' && body.selectedSize.trim()
+    ? body.selectedSize.trim()
+    : (variantSizes[0] ?? 'All Size')
   const bookingImageUrl = matchedColor?.imageUrl || item.imageUrl
 
+  if (variantSizes.length > 0 && !variantSizes.includes(selectedSize)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: selectedColor
+        ? `Ukuran ${selectedSize} sedang tidak tersedia untuk warna ${selectedColor}. Silakan pilih ukuran lain.`
+        : `Ukuran ${selectedSize} sedang tidak tersedia untuk busana ini.`,
+    })
+  }
+
   const activeBookings = await listActiveBookingsByItemId(item.id)
-  const conflict = activeBookings.find(
-    b => datesOverlap(startDate, endDate, b.startDate, b.endDate),
-  )
+  const hasMultipleColors = Boolean(item.colors && item.colors.length > 1)
+  const conflict = activeBookings.find((b) => {
+    if (!datesOverlap(startDate, endDate, b.startDate, b.endDate)) return false
+    const sameSize = b.selectedSize.trim().toLowerCase() === selectedSize.trim().toLowerCase()
+    if (!sameSize) return false
+    if (hasMultipleColors && selectedColor && b.selectedColor) {
+      return b.selectedColor.trim().toLowerCase() === selectedColor.trim().toLowerCase()
+    }
+    return true
+  })
 
   if (conflict) {
+    const variantLabel = selectedColor
+      ? `Ukuran ${selectedSize} warna ${selectedColor}`
+      : `Ukuran ${selectedSize}`
     throw createError({
       statusCode: 409,
-      statusMessage: `Tanggal tersebut bentrok dengan jadwal sewa aktif (${conflict.startDate} s/d ${conflict.endDate}). Silakan pilih rentang tanggal lain.`,
+      statusMessage: `${variantLabel} sudah terpesan pada ${conflict.startDate} s/d ${conflict.endDate}. Silakan pilih ukuran, warna, atau tanggal lain.`,
     })
   }
 

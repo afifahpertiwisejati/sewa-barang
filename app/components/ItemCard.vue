@@ -12,8 +12,33 @@ const toast = useToast()
 
 const imageError = ref(false)
 const fallbackImage = '/images/kebaya-sage.jpg'
+const previewColorName = ref('')
 
 const liked = computed(() => isLiked(props.item.id))
+
+const activeColorVariant = computed(() => {
+  if (!props.item.colors?.length) return null
+  if (!previewColorName.value) return props.item.colors[0] ?? null
+  return props.item.colors.find(c => c.name === previewColorName.value) ?? props.item.colors[0] ?? null
+})
+
+const displayImageUrl = computed(() => {
+  if (imageError.value) return fallbackImage
+  if (previewColorName.value && activeColorVariant.value?.imageUrl) {
+    return activeColorVariant.value.imageUrl
+  }
+  return props.item.imageUrl || fallbackImage
+})
+
+const itemDetailLink = computed(() => {
+  if (previewColorName.value) {
+    return {
+      path: `/items/${props.item.id}`,
+      query: { color: previewColorName.value },
+    }
+  }
+  return `/items/${props.item.id}`
+})
 
 const displayName = computed(() => {
   const raw = props.item.name.trim()
@@ -26,10 +51,18 @@ const displayName = computed(() => {
 })
 
 const displaySizes = computed(() => {
-  const sizes = props.item.sizes ?? []
-  if (sizes.length <= 4) return sizes.join(' · ')
-  return `${sizes.slice(0, 3).join(' · ')} +${sizes.length - 3}`
+  const variantSizes = previewColorName.value && activeColorVariant.value?.sizes
+    ? activeColorVariant.value.sizes
+    : props.item.sizes ?? []
+  if (variantSizes.length === 0) return 'Habis'
+  if (variantSizes.length <= 4) return variantSizes.join(' · ')
+  return `${variantSizes.slice(0, 3).join(' · ')} +${variantSizes.length - 3}`
 })
+
+function selectPreviewColor(colorName: string) {
+  previewColorName.value = colorName
+  imageError.value = false
+}
 
 function handleToggleLike() {
   toggleLike(props.item.id)
@@ -45,16 +78,16 @@ function handleToggleLike() {
 
 <template>
   <NuxtLink
-    :to="`/items/${props.item.id}`"
+    :to="itemDetailLink"
     class="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#ECE7DF] bg-white p-2.5 shadow-[0_1px_2px_rgba(43,42,40,0.03)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#D6CEC2] hover:shadow-md sm:p-3"
   >
     <!-- Uniform Aspect-Ratio Studio Image Box -->
     <div class="relative aspect-[3/4] w-full shrink-0 overflow-hidden rounded-xl bg-[#F2EFEA]">
       <img
-        :src="imageError ? fallbackImage : props.item.imageUrl"
-        :alt="displayName"
+        :src="displayImageUrl"
+        :alt="previewColorName ? `${displayName} — ${previewColorName}` : displayName"
         loading="lazy"
-        class="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+        class="h-full w-full object-cover object-top transition-all duration-300 group-hover:scale-105"
         @error="imageError = true"
       >
 
@@ -87,22 +120,32 @@ function handleToggleLike() {
       <!-- Subtle Size Pill Bottom Left -->
       <div
         v-if="displaySizes"
-        class="absolute bottom-2 left-2 max-w-[70%] truncate rounded-md bg-[#FAF8F5]/92 px-2 py-0.5 text-[10px] font-medium text-[#2B2A28] shadow-sm backdrop-blur-sm"
+        class="absolute bottom-2 left-2 max-w-[58%] truncate rounded-md bg-[#FAF8F5]/92 px-2 py-0.5 text-[10px] font-medium text-[#2B2A28] shadow-sm backdrop-blur-sm"
       >
-        Size {{ displaySizes }}
+        <template v-if="previewColorName">{{ previewColorName }} · </template>{{ displaySizes === 'Habis' ? 'Stok Habis' : `Size ${displaySizes}` }}
       </div>
 
-      <!-- Color Swatch Dots Bottom Right (for multi-color models) -->
+      <!-- Interactive Color Swatch Dots Bottom Right (for multi-color models) -->
       <div
         v-if="props.item.colors && props.item.colors.length > 1"
-        class="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-white/92 px-1.5 py-1 shadow-sm backdrop-blur-sm"
-        :title="`${props.item.colors.length} pilihan warna`"
+        class="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-white/95 px-1.5 py-1 shadow-sm backdrop-blur-sm"
+        :title="`${props.item.colors.length} pilihan warna — klik untuk pratinjau`"
       >
-        <span
-          v-for="c in props.item.colors.slice(0, 4)"
+        <button
+          v-for="c in props.item.colors.slice(0, 6)"
           :key="c.name"
-          class="h-2 w-2 rounded-full border border-black/20 sm:h-2.5 sm:w-2.5"
+          type="button"
+          class="h-2.5 w-2.5 rounded-full border transition-transform hover:scale-125 sm:h-3 sm:w-3"
+          :class="
+            (previewColorName ? previewColorName === c.name : props.item.colors[0]?.name === c.name)
+              ? 'scale-110 border-[#2B2A28] ring-1 ring-[#2B2A28] ring-offset-1'
+              : 'border-black/20'
+          "
           :style="{ backgroundColor: c.hex }"
+          :title="`Warna ${c.name}`"
+          :aria-label="`Pratinjau warna ${c.name}`"
+          @click.prevent.stop="selectPreviewColor(c.name)"
+          @mouseenter="selectPreviewColor(c.name)"
         />
       </div>
     </div>

@@ -756,7 +756,7 @@ export async function updateItem(item: RentalItem): Promise<void> {
   const pool = await getDbPool()
   await pool.execute(
     `UPDATE items
-     SET name = ?, location = ?, price_per_day = ?, deposit = ?, status = ?, sizes_json = ?, image_url = ?, gallery_json = ?
+     SET name = ?, location = ?, price_per_day = ?, deposit = ?, status = ?, sizes_json = ?, colors_json = ?, image_url = ?, gallery_json = ?
      WHERE id = ?`,
     [
       item.name,
@@ -765,6 +765,7 @@ export async function updateItem(item: RentalItem): Promise<void> {
       item.deposit,
       item.status,
       JSON.stringify(item.sizes),
+      item.colors ? JSON.stringify(item.colors) : null,
       item.imageUrl,
       JSON.stringify(item.gallery),
       item.id,

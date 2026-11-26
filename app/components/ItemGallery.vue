@@ -46,9 +46,13 @@ watch(
   () => props.selectedColor,
   (colorName) => {
     if (!colorName || !props.colors?.length) return
-    const idx = props.colors.findIndex(c => c.name === colorName)
-    if (idx !== -1 && idx !== activeIndex.value) {
-      activeIndex.value = idx
+    const target = colorName.trim().toLowerCase()
+    const idx = props.colors.findIndex(c => c.name.trim().toLowerCase() === target)
+    if (idx !== -1) {
+      failedIndices.value[idx] = false
+      if (idx !== activeIndex.value) {
+        activeIndex.value = idx
+      }
     }
   },
   { immediate: true },
@@ -116,10 +120,11 @@ function handleTouchEnd(event: TouchEvent) {
       @touchend.passive="handleTouchEnd"
     >
       <img
+        :key="currentSrc"
         :src="currentSrc"
         :alt="currentSlide.colorName ? `${props.name} — Warna ${currentSlide.colorName}` : props.name"
         draggable="false"
-        class="h-full w-full rounded-xl object-contain transition-all duration-300"
+        class="h-full w-full rounded-xl object-contain transition-opacity duration-200"
         style="width: 100%; height: 100%; object-fit: contain;"
         @error="failedIndices[activeIndex] = true"
       >

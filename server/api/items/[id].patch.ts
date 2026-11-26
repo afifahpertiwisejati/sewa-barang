@@ -1,4 +1,4 @@
-import type { ItemStatus, RentalItem } from '#shared/types/rental'
+import type { ItemColorVariant, ItemStatus, RentalItem } from '#shared/types/rental'
 import { requireAdminUser } from '../../utils/auth'
 import { findItemById, updateItem } from '../../utils/db'
 
@@ -16,6 +16,7 @@ export default defineEventHandler(async (event): Promise<RentalItem> => {
     location?: string
     status?: ItemStatus
     sizes?: string[]
+    colors?: ItemColorVariant[]
     imageUrl?: string
   }>(event)
 
@@ -52,6 +53,28 @@ export default defineEventHandler(async (event): Promise<RentalItem> => {
       throw createError({ statusCode: 400, statusMessage: 'Pilih minimal 1 ukuran untuk produk ini.' })
     }
     item.sizes = cleanedSizes
+  }
+  if (Array.isArray(body?.colors) && item.colors?.length) {
+    const nextColors = item.colors.map((existing) => {
+      const incoming = body.colors?.find(c => c.name.toLowerCase() === existing.name.toLowerCase())
+      if (!incoming) return existing
+      if (Array.isArray(incoming.sizes)) {
+        const cleaned = Array.from(
+          new Set(
+            incoming.sizes
+              .filter((s): s is string => typeof s === 'string')
+              .map(s => s.trim())
+              .filter(s => s.length > 0 && s.length <= 24),
+          ),
+        )
+        return {
+          ...existing,
+          sizes: cleaned,
+        }
+      }
+      return existing
+    })
+    item.colors = nextColors
   }
   if (typeof body?.imageUrl === 'string' && /^(https?:\/\/|\/images\/|\/uploads\/|\/api\/uploads\/).+/i.test(body.imageUrl.trim())) {
     const newUrl = body.imageUrl.trim()

@@ -10,6 +10,7 @@ import {
   IdCard,
   Loader2,
   ReceiptText,
+  RefreshCw,
   Ruler,
   Shield,
   Sparkles,
@@ -30,11 +31,13 @@ import {
 const props = defineProps<{
   item: RentalItemDetail
   selectedColor?: string
+  isRefreshingStock?: boolean
 }>()
 
 const emit = defineEmits<{
   booked: [booking: BookingRecord]
   'update:selectedColor': [color: string]
+  'refresh-stock': []
 }>()
 
 const route = useRoute()
@@ -56,18 +59,96 @@ const defaultEnd = computed(() =>
     : getOffsetIsoDate(3),
 )
 
-const availableSizes = computed(() =>
-  props.item.sizes?.length ? props.item.sizes : ['All Size'],
-)
 const availableColors = computed(() => props.item.colors ?? [])
+const hasMultipleColors = computed(() => availableColors.value.length > 1)
 const activeColor = computed({
   get: () => props.selectedColor || availableColors.value[0]?.name || '',
   set: (val: string) => emit('update:selectedColor', val),
+})
+const activeColorVariant = computed(() =>
+  availableColors.value.find(c => c.name.toLowerCase() === activeColor.value.toLowerCase()) ?? null,
+)
+
+function getOfferedSizesForColor(colorName: string): string[] {
+  const baseSizes = props.item.sizes?.length ? props.item.sizes : ['All Size']
+  if (!colorName) return baseSizes
+  const variant = availableColors.value.find(c => c.name.toLowerCase() === colorName.toLowerCase())
+  if (variant && Array.isArray(variant.sizes)) {
+    return variant.sizes
+  }
+  return baseSizes
+}
+
+const availableSizes = computed(() => {
+  const baseSizes = props.item.sizes?.length ? props.item.sizes : ['All Size']
+  const variantSizes = activeColorVariant.value?.sizes
+  if (variantSizes && variantSizes.length > 0) {
+    return Array.from(new Set([...baseSizes, ...variantSizes]))
+  }
+  return baseSizes
 })
 
 const selectedSize = ref(availableSizes.value[0] ?? 'All Size')
 const startDate = ref(defaultStart.value)
 const endDate = ref(defaultEnd.value)
+
+function getBookingConflict(size: string, colorName: string) {
+  if (!startDate.value || !endDate.value) return undefined
+  const targetSize = size.trim().toLowerCase()
+  const targetColor = colorName.trim().toLowerCase()
+  return props.item.bookedRanges.find((range) => {
+    const overlaps = startDate.value <= range.endDate && range.startDate <= endDate.value
+    if (!overlaps) return false
+    if (range.selectedSize && range.selectedSize.trim().toLowerCase() !== targetSize) {
+      return false
+    }
+    if (hasMultipleColors.value && targetColor && range.selectedColor) {
+      return range.selectedColor.trim().toLowerCase() === targetColor
+    }
+    return true
+  })
+}
+
+const sizeStates = computed(() => {
+  const offeredForColor = getOfferedSizesForColor(activeColor.value)
+  return availableSizes.value.map((size) => {
+    const inStockForColor = offeredForColor.includes(size)
+    const conflict = inStockForColor ? getBookingConflict(size, activeColor.value) : undefined
+    const available = inStockForColor && !conflict
+    return {
+      size,
+      inStockForColor,
+      conflict,
+      available,
+      statusLabel: !inStockForColor ? 'Habis' : conflict ? 'Terpesan' : 'Tersedia',
+    }
+  })
+})
+
+const selectedSizeState = computed(() =>
+  sizeStates.value.find(s => s.size === selectedSize.value) ?? sizeStates.value[0] ?? null,
+)
+
+const activeColorReadyCount = computed(() =>
+  sizeStates.value.filter(s => s.available).length,
+)
+
+function getColorStockSummary(colorName: string) {
+  const offered = getOfferedSizesForColor(colorName)
+  const total = offered.length
+  const ready = offered.filter(sz => !getBookingConflict(sz, colorName)).length
+  return { ready, total }
+}
+
+const relevantBookedRanges = computed(() => {
+  if (!hasMultipleColors.value || !activeColor.value) {
+    return props.item.bookedRanges
+  }
+  const targetColor = activeColor.value.trim().toLowerCase()
+  return props.item.bookedRanges.filter(
+    r => !r.selectedColor || r.selectedColor.trim().toLowerCase() === targetColor,
+  )
+})
 const deliveryOption = ref<DeliveryOption>('ambil_sendiri')
 const paymentMethod = ref<PaymentMethod | ''>('')
 const selectedQrisChannel = ref('BCA Mobile')
@@ -106,11 +187,22 @@ const isCashPayment = computed(() => paymentMethod.value === 'cash')
 const guaranteeOptions = Object.entries(GUARANTEE_OPTIONS) as [GuaranteeType, { label: string, description: string }][]
 const activeGuaranteeInfo = computed(() => GUARANTEE_OPTIONS[guaranteeType.value])
 
-watch(availableSizes, (sizes) => {
-  if (!sizes.includes(selectedSize.value)) {
-    selectedSize.value = sizes[0] ?? 'All Size'
-  }
-})
+watch(
+  [sizeStates, activeColor],
+  () => {
+    const current = sizeStates.value.find(s => s.size === selectedSize.value)
+    if (!current || !current.available) {
+      const firstAvailable = sizeStates.value.find(s => s.available)
+      if (firstAvailable) {
+        selectedSize.value = firstAvailable.size
+      }
+      else if (!current && sizeStates.value[0]) {
+        selectedSize.value = sizeStates.value[0].size
+      }
+    }
+  },
+  { immediate: true },
+)
 
 watch(startDate, (newStart) => {
   if (newStart && endDate.value && endDate.value < newStart) {
@@ -140,11 +232,13 @@ const dateValidationError = computed(() => {
   if (endDate.value < startDate.value) {
     return 'Tanggal selesai harus sama atau setelah tanggal mulai.'
   }
-  const conflict = props.item.bookedRanges.find(
-    range => startDate.value <= range.endDate && range.startDate <= endDate.value,
-  )
-  if (conflict) {
-    return `Tanggal bentrok dengan jadwal sewa aktif (${formatDate(conflict.startDate)} – ${formatDate(conflict.endDate)}). Pilih tanggal lain.`
+  const state = selectedSizeState.value
+  const colorSuffix = activeColor.value ? ` warna ${activeColor.value}` : ''
+  if (state && !state.inStockForColor) {
+    return `Ukuran ${state.size}${colorSuffix} sedang kosong/habis. Pilih ukuran atau warna lain yang tersedia.`
+  }
+  if (state?.conflict) {
+    return `Ukuran ${state.size}${colorSuffix} sudah terpesan (${formatDate(state.conflict.startDate)} – ${formatDate(state.conflict.endDate)}). Pilih ukuran, warna, atau tanggal lain.`
   }
   return ''
 })
@@ -348,61 +442,104 @@ function handlePaid(updated: BookingRecord) {
 
     <!-- Calculator Form -->
     <form v-else class="mt-5 space-y-4" @submit.prevent="handleBookingSubmit">
-      <!-- Active booked dates alert -->
+      <!-- Active booked dates alert (scoped to active color) -->
       <div
-        v-if="props.item.bookedRanges.length > 0"
+        v-if="relevantBookedRanges.length > 0"
         class="rounded-xl border border-[#E3CFC8] bg-[#FAF4F1] p-3 text-xs text-[#6B4F45]"
       >
         <p class="flex items-center gap-1.5 font-semibold">
           <Calendar class="h-3.5 w-3.5 text-[#9E7B6B]" />
-          Jadwal Terpesan Saat Ini:
+          Jadwal Terpesan{{ activeColor ? ` (${activeColor})` : '' }}:
         </p>
         <ul class="mt-1 list-disc space-y-0.5 pl-5">
-          <li v-for="range in props.item.bookedRanges" :key="range.bookingId">
+          <li v-for="range in relevantBookedRanges" :key="range.bookingId">
+            <strong v-if="range.selectedSize">Size {{ range.selectedSize }}</strong>
+            <template v-if="range.selectedSize"> &bull; </template>
             {{ formatDate(range.startDate) }} – {{ formatDate(range.endDate) }}
           </li>
         </ul>
       </div>
 
-      <!-- Color Selector (when model has multiple colors) -->
+      <!-- Color Selector (synced with gallery photo & real-time per-color size stock) -->
       <div v-if="availableColors.length > 0">
-        <div class="mb-2 flex items-center justify-between">
+        <div class="mb-2 flex items-center justify-between gap-2">
           <span class="text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
-            Pilih Warna
+            Pilih Warna ({{ availableColors.length }})
           </span>
-          <span class="text-xs font-semibold text-[#2B2A28]">
-            {{ activeColor }}
-          </span>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-semibold text-[#2B2A28]">
+              {{ activeColor }}
+            </span>
+            <RefreshCw
+              v-if="props.isRefreshingStock"
+              class="h-3 w-3 animate-spin text-[#556256]"
+              title="Memperbarui stok..."
+            />
+          </div>
         </div>
-        <div class="grid grid-cols-3 gap-1.5">
+        <div class="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
           <button
             v-for="color in availableColors"
             :key="color.name"
             type="button"
-            class="flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-[11px] font-medium transition-all"
+            class="flex items-center justify-between gap-1.5 rounded-lg border px-2.5 py-2 text-left text-[11px] font-medium transition-all"
             :class="
               activeColor === color.name
-                ? 'border-[#2B2A28] bg-[#2B2A28] text-white'
-                : 'border-[#E8E3DC] bg-[#FAF8F5] text-[#2B2A28] hover:border-[#556256]'
+                ? 'border-[#2B2A28] bg-[#2B2A28] text-white shadow-sm'
+                : getColorStockSummary(color.name).ready === 0
+                  ? 'border-dashed border-[#E2DCD3] bg-[#FAF8F5] text-[#9A938A] hover:border-[#C7B8AE]'
+                  : 'border-[#E8E3DC] bg-[#FAF8F5] text-[#2B2A28] hover:border-[#556256]'
             "
             @click="activeColor = color.name"
           >
+            <span class="flex min-w-0 items-center gap-1.5">
+              <span
+                class="h-3.5 w-3.5 shrink-0 rounded-full border"
+                :class="activeColor === color.name ? 'border-white/70' : 'border-black/20'"
+                :style="{ backgroundColor: color.hex }"
+              />
+              <span class="truncate">{{ color.name }}</span>
+            </span>
             <span
-              class="h-3.5 w-3.5 shrink-0 rounded-full border"
-              :class="activeColor === color.name ? 'border-white/70' : 'border-black/20'"
-              :style="{ backgroundColor: color.hex }"
-            />
-            <span class="truncate">{{ color.name }}</span>
+              class="shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold"
+              :class="
+                getColorStockSummary(color.name).ready === 0
+                  ? (activeColor === color.name ? 'bg-rose-500/30 text-rose-100' : 'bg-rose-50 text-rose-600')
+                  : (activeColor === color.name ? 'bg-white/15 text-white' : 'bg-[#EEF2ED] text-[#556256]')
+              "
+            >
+              {{
+                getColorStockSummary(color.name).ready === 0
+                  ? 'Penuh'
+                  : `${getColorStockSummary(color.name).ready}/${getColorStockSummary(color.name).total}`
+              }}
+            </span>
           </button>
         </div>
       </div>
 
-      <!-- Size Selector -->
+      <!-- Size Selector (real-time per-color availability) -->
       <div>
-        <div class="mb-2 flex items-center justify-between gap-2">
-          <span class="text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
-            Pilih Ukuran
-          </span>
+        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
+              Pilih Ukuran
+            </span>
+            <span
+              class="rounded-full px-2 py-0.5 text-[10px] font-medium"
+              :class="
+                activeColorReadyCount > 0
+                  ? 'bg-[#EEF2ED] text-[#455146]'
+                  : 'bg-rose-50 text-rose-700'
+              "
+            >
+              {{
+                activeColor
+                  ? `${activeColor}: ${activeColorReadyCount}/${sizeStates.length} ready`
+                  : `${activeColorReadyCount}/${sizeStates.length} ready`
+              }}
+            </span>
+          </div>
           <button
             type="button"
             class="inline-flex items-center gap-1 text-[11px] font-medium text-[#556256] underline decoration-[#556256]/40 underline-offset-2 transition-colors hover:text-[#2B2A28] hover:decoration-[#2B2A28]"
@@ -414,18 +551,39 @@ function handlePaid(updated: BookingRecord) {
         </div>
         <div class="flex flex-wrap gap-2">
           <button
-            v-for="size in availableSizes"
-            :key="size"
+            v-for="sz in sizeStates"
+            :key="`${activeColor}-${sz.size}`"
             type="button"
-            class="min-w-[46px] rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
-            :class="
-              selectedSize === size
-                ? 'border-[#2B2A28] bg-[#2B2A28] text-white'
-                : 'border-[#E8E3DC] bg-[#FAF8F5] text-[#2B2A28] hover:border-[#556256]'
+            :disabled="!sz.inStockForColor"
+            :title="
+              !sz.inStockForColor
+                ? `Ukuran ${sz.size} habis untuk warna ${activeColor || 'ini'}`
+                : sz.conflict
+                  ? `Terpesan ${formatDate(sz.conflict.startDate)} – ${formatDate(sz.conflict.endDate)}`
+                  : `Ukuran ${sz.size} tersedia`
             "
-            @click="selectedSize = size"
+            class="relative inline-flex min-w-[52px] items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
+            :class="
+              !sz.inStockForColor
+                ? 'cursor-not-allowed border-dashed border-[#E2DCD3] bg-[#F7F5F2] text-[#B0A89E]'
+                : sz.conflict
+                  ? (selectedSize === sz.size
+                      ? 'border-rose-400 bg-rose-50 text-rose-700'
+                      : 'border-dashed border-rose-200 bg-rose-50/50 text-rose-600/80 hover:border-rose-300')
+                  : (selectedSize === sz.size
+                      ? 'border-[#2B2A28] bg-[#2B2A28] text-white'
+                      : 'border-[#E8E3DC] bg-[#FAF8F5] text-[#2B2A28] hover:border-[#556256]')
+            "
+            @click="selectedSize = sz.size"
           >
-            {{ size }}
+            <span :class="{ 'line-through': !sz.available }">{{ sz.size }}</span>
+            <span
+              v-if="!sz.available"
+              class="text-[9px] font-semibold uppercase"
+              :class="!sz.inStockForColor ? 'text-[#A39C93]' : 'text-rose-600'"
+            >
+              {{ sz.statusLabel }}
+            </span>
           </button>
         </div>
       </div>
@@ -470,10 +628,22 @@ function handlePaid(updated: BookingRecord) {
       </div>
       <div
         v-else
-        class="flex items-center gap-2 rounded-lg border border-[#D7E0D5] bg-[#F3F5F2] px-3 py-2 text-xs font-medium text-[#556256]"
+        class="flex items-center justify-between gap-2 rounded-lg border border-[#D7E0D5] bg-[#F3F5F2] px-3 py-2 text-xs font-medium text-[#556256]"
       >
-        <CheckCircle2 class="h-4 w-4 shrink-0" />
-        <span>Size {{ selectedSize }} tersedia untuk {{ durationDays }} hari</span>
+        <span class="flex items-center gap-2">
+          <CheckCircle2 class="h-4 w-4 shrink-0" />
+          <span>
+            <template v-if="activeColor">Warna {{ activeColor }} &bull; </template>Size {{ selectedSize }} tersedia untuk {{ durationDays }} hari
+          </span>
+        </span>
+        <button
+          type="button"
+          class="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-[#556256] hover:bg-white/70"
+          title="Perbarui ketersediaan stok sekarang"
+          @click="emit('refresh-stock')"
+        >
+          <RefreshCw class="h-3 w-3" :class="{ 'animate-spin': props.isRefreshingStock }" />
+        </button>
       </div>
 
       <!-- Delivery Method -->

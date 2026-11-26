@@ -43,6 +43,7 @@ export interface ItemColorVariant {
   name: string
   hex: string
   imageUrl: string
+  sizes?: string[]
 }
 
 export interface RentalItem {
@@ -69,6 +70,8 @@ export interface BookedDateRange {
   bookingId: string
   startDate: string
   endDate: string
+  selectedSize?: string
+  selectedColor?: string
 }
 
 export interface RentalItemDetail extends RentalItem {

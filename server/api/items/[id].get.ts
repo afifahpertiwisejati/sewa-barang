@@ -18,6 +18,8 @@ export default defineEventHandler(async (event): Promise<RentalItemDetail> => {
     })
   }
 
+  setHeader(event, 'Cache-Control', 'no-store')
+
   item.status = await syncItemStatusInDb(item.id)
   const activeBookings = await listActiveBookingsByItemId(item.id)
 
@@ -26,6 +28,8 @@ export default defineEventHandler(async (event): Promise<RentalItemDetail> => {
       bookingId: b.id,
       startDate: b.startDate,
       endDate: b.endDate,
+      selectedSize: b.selectedSize,
+      selectedColor: b.selectedColor,
     }))
     .sort((a, b) => a.startDate.localeCompare(b.startDate))
 

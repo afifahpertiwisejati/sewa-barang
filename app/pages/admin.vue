@@ -21,6 +21,7 @@ import {
   SHOE_SIZES_WOMEN,
   type BookingRecord,
   type CategoryFilter,
+  type ItemColorVariant,
   type ItemsListResponse,
   type RentalItem,
 } from '#shared/types/rental'
@@ -59,6 +60,7 @@ const editForm = reactive({
   deposit: 0,
   status: 'Tersedia' as RentalItem['status'],
   sizes: [] as string[],
+  colors: [] as ItemColorVariant[],
   customSize: '',
   imageUrl: '',
 })
@@ -190,9 +192,29 @@ function startEdit(item: RentalItem) {
   editForm.pricePerDay = item.pricePerDay
   editForm.deposit = item.deposit
   editForm.status = item.status
-  editForm.sizes = [...(item.sizes?.length ? item.sizes : ['All Size'])]
+  const defaultSizes = [...(item.sizes?.length ? item.sizes : ['All Size'])]
+  editForm.sizes = defaultSizes
+  editForm.colors = (item.colors ?? []).map(c => ({
+    ...c,
+    sizes: Array.isArray(c.sizes) ? [...c.sizes] : [...defaultSizes],
+  }))
   editForm.customSize = ''
   editForm.imageUrl = item.imageUrl
+}
+
+function toggleColorSize(colorIndex: number, size: string) {
+  const variant = editForm.colors[colorIndex]
+  if (!variant) return
+  if (!Array.isArray(variant.sizes)) {
+    variant.sizes = [...editForm.sizes]
+  }
+  const idx = variant.sizes.indexOf(size)
+  if (idx >= 0) {
+    variant.sizes.splice(idx, 1)
+  }
+  else {
+    variant.sizes.push(size)
+  }
 }
 
 async function handleEditPhotoUpload(event: Event) {
@@ -251,6 +273,7 @@ async function saveEdit(itemId: string) {
         deposit: editForm.deposit,
         status: editForm.status,
         sizes: editForm.sizes,
+        colors: editForm.colors.length > 0 ? editForm.colors : undefined,
         imageUrl: editForm.imageUrl,
       },
     })
@@ -597,6 +620,41 @@ async function handleItemCreated() {
                           >
                             + Tambah
                           </button>
+                        </div>
+                        <div
+                          v-if="editForm.colors.length > 1"
+                          class="mt-2 space-y-1 rounded-lg border border-[#EFECE7] bg-[#FAF8F5] p-2"
+                        >
+                          <p class="text-[10px] font-semibold uppercase tracking-wider text-[#6B655E]">
+                            Stok Ukuran per Warna:
+                          </p>
+                          <div
+                            v-for="(col, cIdx) in editForm.colors"
+                            :key="col.name"
+                            class="flex flex-wrap items-center gap-1"
+                          >
+                            <span class="inline-flex w-20 items-center gap-1 truncate text-[10px] font-medium text-[#2B2A28]">
+                              <span
+                                class="h-2.5 w-2.5 shrink-0 rounded-full border border-black/20"
+                                :style="{ backgroundColor: col.hex }"
+                              />
+                              <span class="truncate">{{ col.name }}</span>
+                            </span>
+                            <button
+                              v-for="sz in editForm.sizes"
+                              :key="`${col.name}-${sz}`"
+                              type="button"
+                              class="rounded border px-1.5 py-0.5 text-[9.5px] font-medium transition-colors"
+                              :class="
+                                (col.sizes ?? editForm.sizes).includes(sz)
+                                  ? 'border-[#556256] bg-[#556256] text-white'
+                                  : 'border-dashed border-[#D9D2C8] bg-white text-[#A39C93] line-through'
+                              "
+                              @click="toggleColorSize(cIdx, sz)"
+                            >
+                              {{ sz }}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

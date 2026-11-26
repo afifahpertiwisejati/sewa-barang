@@ -9,6 +9,7 @@ import {
 import type { RentalItemDetail } from '#shared/types/rental'
 
 const route = useRoute()
+const router = useRouter()
 const itemId = computed(() => String(route.params.id))
 const { setActiveProduct } = useWhatsAppConsult()
 
@@ -17,35 +18,79 @@ const { data: item, pending, error, refresh } = await useFetch<RentalItemDetail>
 )
 
 const selectedColor = ref('')
+const isRefreshingStock = ref(false)
+let lastStockSyncAt = 0
+
+function syncWhatsAppContext() {
+  const val = item.value
+  if (!val) {
+    setActiveProduct(null)
+    return
+  }
+  setActiveProduct({
+    id: val.id,
+    name: selectedColor.value ? `${val.name} (Warna ${selectedColor.value})` : val.name,
+    category: val.category,
+    pricePerDay: val.pricePerDay,
+  })
+}
+
+async function refreshLiveStock(force = false) {
+  const now = Date.now()
+  if (!force && now - lastStockSyncAt < 3000) return
+  lastStockSyncAt = now
+  isRefreshingStock.value = true
+  try {
+    await refresh()
+  }
+  finally {
+    isRefreshingStock.value = false
+  }
+}
 
 watch(
   item,
   (val) => {
-    if (val) {
-      setActiveProduct({
-        id: val.id,
-        name: val.name,
-        category: val.category,
-        pricePerDay: val.pricePerDay,
-      })
-    }
-    else {
-      setActiveProduct(null)
-    }
-
     if (val?.colors?.length) {
-      if (!val.colors.some(c => c.name === selectedColor.value)) {
-        selectedColor.value = val.colors[0]!.name
+      const queryColor = typeof route.query.color === 'string' ? route.query.color.trim().toLowerCase() : ''
+      const matchedFromQuery = queryColor
+        ? val.colors.find(c => c.name.trim().toLowerCase() === queryColor)
+        : undefined
+      const currentStillValid = val.colors.some(c => c.name === selectedColor.value)
+
+      if (!currentStillValid) {
+        selectedColor.value = matchedFromQuery?.name ?? val.colors[0]!.name
       }
     }
     else {
       selectedColor.value = ''
     }
+    syncWhatsAppContext()
   },
   { immediate: true },
 )
 
+watch(selectedColor, (newColor, oldColor) => {
+  syncWhatsAppContext()
+  if (!import.meta.client || !newColor) return
+  if (route.query.color !== newColor) {
+    router.replace({ query: { ...route.query, color: newColor } }).catch(() => {})
+  }
+  if (oldColor && newColor !== oldColor) {
+    refreshLiveStock(false)
+  }
+})
+
+function handleWindowFocus() {
+  refreshLiveStock(false)
+}
+
+onMounted(() => {
+  window.addEventListener('focus', handleWindowFocus)
+})
+
 onBeforeUnmount(() => {
+  window.removeEventListener('focus', handleWindowFocus)
   setActiveProduct(null)
 })
 
@@ -54,7 +99,7 @@ useHead(() => ({
 }))
 
 async function handleBooked() {
-  await refresh()
+  await refreshLiveStock(true)
 }
 </script>
 
@@ -78,7 +123,7 @@ async function handleBooked() {
     </div>
 
     <!-- Loading -->
-    <div v-if="pending" class="grid grid-cols-1 gap-8 lg:grid-cols-12">
+    <div v-if="pending && !item" class="grid grid-cols-1 gap-8 lg:grid-cols-12">
       <div class="space-y-4 lg:col-span-7">
         <div class="aspect-[16/11] animate-pulse rounded-2xl bg-[#EFECE7]" />
         <div class="h-40 animate-pulse rounded-2xl bg-white" />
@@ -202,7 +247,9 @@ async function handleBooked() {
         <BookingCalculator
           v-model:selected-color="selectedColor"
           :item="item"
+          :is-refreshing-stock="isRefreshingStock"
           @booked="handleBooked"
+          @refresh-stock="refreshLiveStock(true)"
         />
       </div>
     </div>
