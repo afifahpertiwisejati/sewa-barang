@@ -288,29 +288,32 @@ export interface NotificationsListResponse {
 
 export const DELIVERY_FEE_COURIER = 15000
 export const STANDARD_PACKAGE_DAYS = 3
+export const EXTRA_DAY_4_FEE = 10000
+export const EXTRA_DAY_5_FEE = 15000
+export const EXTRA_DAY_AFTER_5_RATE = 5000
 export const DRY_CLEAN_BUFFER_BEFORE_DAYS = 1
 export const DRY_CLEAN_BUFFER_AFTER_DAYS = 2
 
-export function getExtraDayRate(packagePrice: number): number {
-  const raw = Math.round(packagePrice / STANDARD_PACKAGE_DAYS / 5000) * 5000
-  return Math.max(15000, raw)
+export function getExtraDurationFee(durationDays: number): number {
+  const safeDays = Math.max(1, durationDays)
+  if (safeDays <= STANDARD_PACKAGE_DAYS) return 0
+  if (safeDays === 4) return EXTRA_DAY_4_FEE
+  if (safeDays === 5) return EXTRA_DAY_5_FEE
+  return EXTRA_DAY_5_FEE + (safeDays - 5) * EXTRA_DAY_AFTER_5_RATE
 }
 
 export function calculatePackagePricing(packagePrice: number, durationDays: number): {
   basePackagePrice: number
   extraDays: number
-  extraDayRate: number
   extraTotal: number
   subtotal: number
 } {
   const safeDays = Math.max(1, durationDays)
   const extraDays = Math.max(0, safeDays - STANDARD_PACKAGE_DAYS)
-  const extraDayRate = getExtraDayRate(packagePrice)
-  const extraTotal = extraDays * extraDayRate
+  const extraTotal = getExtraDurationFee(safeDays)
   return {
     basePackagePrice: packagePrice,
     extraDays,
-    extraDayRate,
     extraTotal,
     subtotal: packagePrice + extraTotal,
   }

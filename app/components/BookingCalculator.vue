@@ -26,6 +26,8 @@ import {
   DEPOSIT_REFUND_METHODS,
   DRY_CLEAN_BUFFER_AFTER_DAYS,
   DRY_CLEAN_BUFFER_BEFORE_DAYS,
+  EXTRA_DAY_4_FEE,
+  EXTRA_DAY_5_FEE,
   GUARANTEE_OPTIONS,
   PAYMENT_ACCOUNTS,
   shiftIsoDate,
@@ -707,8 +709,8 @@ function handlePaid(updated: BookingRecord) {
           <button
             v-for="pkg in [
               { days: 3, title: 'Paket 3 Hari', sub: 'H-1 · Acara · H+1' },
-              { days: 4, title: '4 Hari', sub: `+${formatRupiah(packagePricing.extraDayRate)}` },
-              { days: 5, title: '5 Hari', sub: `+${formatRupiah(packagePricing.extraDayRate * 2)}` },
+              { days: 4, title: '4 Hari', sub: `+${formatRupiah(EXTRA_DAY_4_FEE)}` },
+              { days: 5, title: '5 Hari', sub: `+${formatRupiah(EXTRA_DAY_5_FEE)}` },
             ]"
             :key="pkg.days"
             type="button"
@@ -1195,7 +1197,7 @@ function handlePaid(updated: BookingRecord) {
             <span class="font-medium text-[#2B2A28]">{{ formatRupiah(packagePricing.basePackagePrice) }}</span>
           </div>
           <div v-if="packagePricing.extraDays > 0" class="flex items-center justify-between text-[#6B655E]">
-            <span>Tambahan {{ packagePricing.extraDays }} hari ({{ packagePricing.extraDays }} &times; {{ formatRupiah(packagePricing.extraDayRate) }})</span>
+            <span>Tambahan durasi (Paket {{ durationDays }} hari)</span>
             <span class="font-medium text-[#2B2A28]">+ {{ formatRupiah(packagePricing.extraTotal) }}</span>
           </div>
           <div class="flex items-center justify-between text-[#6B655E]">

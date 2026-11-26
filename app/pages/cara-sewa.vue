@@ -91,7 +91,7 @@ const careRules = [
 const faqs = [
   {
     q: 'Bagaimana skema durasi sewa Paket 3 Hari di Seruni Atelier?',
-    a: 'Seluruh harga di katalog adalah tarif Paket Standar 3 Hari: H-1 untuk pengambilan/pengantaran busana, Hari-H untuk acara Anda, dan H+1 untuk pengembalian (maksimal pukul 21.00 WIB). Jika butuh durasi 4–5 hari atau lebih, biaya hari tambahan dihitung proporsional otomatis di kalkulator sebelum checkout.',
+    a: 'Seluruh harga di katalog adalah tarif Paket Standar 3 Hari: H-1 untuk pengambilan/pengantaran busana, Hari-H untuk acara Anda, dan H+1 untuk pengembalian (maksimal pukul 21.00 WIB). Jika butuh lebih lama, tersedia tambahan hemat Paket 4 Hari (+Rp10.000) dan Paket 5 Hari (+Rp15.000).',
   },
   {
     q: 'Apakah busana perlu dicuci sebelum dikembalikan?',
@@ -233,7 +233,7 @@ function toggleFaq(idx: number) {
           </div>
 
           <p class="mt-3 text-[11px] text-[#455146]">
-            <strong>Butuh lebih dari 3 hari?</strong> Pilih paket 4–5 hari atau tentukan rentang tanggal di kalender — biaya hari tambahan (hari ke-4 dst.) dihitung proporsional otomatis di kalkulator sebelum checkout.
+            <strong>Butuh lebih dari 3 hari?</strong> Tersedia tambahan durasi hemat: <strong>Paket 4 Hari (+Rp10.000)</strong>, <strong>Paket 5 Hari (+Rp15.000)</strong>, dan Rp5.000/hari untuk hari berikutnya — otomatis terhitung di kalkulator sebelum checkout.
           </p>
         </div>
       </section>
