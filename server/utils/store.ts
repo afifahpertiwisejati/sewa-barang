@@ -3005,7 +3005,7 @@ export function calculateRentalDays(startDate: string, endDate: string): number 
   const end = new Date(`${endDate}T00:00:00`)
   const diffMs = end.getTime() - start.getTime()
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24))
-  return diffDays <= 0 ? 1 : diffDays
+  return diffDays < 0 ? 1 : diffDays + 1
 }
 
 export function syncItemStatus(db: DatabaseSchema, itemId: string) {

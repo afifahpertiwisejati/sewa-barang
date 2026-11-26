@@ -528,7 +528,7 @@ async function handleItemCreated() {
               <tr>
                 <th class="px-4 py-3">Produk</th>
                 <th class="px-4 py-3">Kategori</th>
-                <th class="px-4 py-3">Harga / Hari</th>
+                <th class="px-4 py-3">Harga / Paket 3 Hr</th>
                 <th class="px-4 py-3">Deposit</th>
                 <th class="px-4 py-3">Status</th>
                 <th class="px-4 py-3 text-right">Aksi</th>

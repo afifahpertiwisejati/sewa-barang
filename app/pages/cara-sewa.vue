@@ -28,8 +28,8 @@ const steps = [
   },
   {
     step: '02',
-    title: 'Atur Tanggal & Pengiriman',
-    desc: 'Tentukan tanggal mulai hingga selesai sewa. Pilih Ambil Sendiri di Butik (Gratis) atau layanan Kurir Antar (Rp15.000).',
+    title: 'Pilih Paket 3 Hari & Jadwal',
+    desc: 'Harga katalog berlaku untuk Paket Standar 3 Hari (H-1 ambil, Hari-H acara, H+1 kembali). Butuh lebih lama? Hari tambahan otomatis terhitung transparan di kalkulator.',
     icon: CalendarRange,
   },
   {
@@ -89,6 +89,10 @@ const careRules = [
 ]
 
 const faqs = [
+  {
+    q: 'Bagaimana skema durasi sewa Paket 3 Hari di Seruni Atelier?',
+    a: 'Seluruh harga di katalog adalah tarif Paket Standar 3 Hari: H-1 untuk pengambilan/pengantaran busana, Hari-H untuk acara Anda, dan H+1 untuk pengembalian (maksimal pukul 21.00 WIB). Jika butuh durasi 4–5 hari atau lebih, biaya hari tambahan dihitung proporsional otomatis di kalkulator sebelum checkout.',
+  },
   {
     q: 'Apakah busana perlu dicuci sebelum dikembalikan?',
     a: 'Tidak perlu! Semua sewa di Seruni Atelier sudah termasuk layanan laundry dry-clean & sterilisasi profesional agar bahan brokat, payet, dan satin tetap awet.',
@@ -192,6 +196,45 @@ function toggleFaq(idx: number) {
               {{ item.desc }}
             </p>
           </div>
+        </div>
+
+        <!-- Skema Durasi Paket 3 Hari -->
+        <div class="mt-5 rounded-2xl border border-[#D7E0D5] bg-[#F3F5F2] p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="font-serif text-lg font-medium text-[#2B2A28]">
+                Skema Durasi Sewa: Paket Standar 3 Hari
+              </h3>
+              <p class="mt-0.5 text-xs text-[#455146]">
+                Seluruh tarif yang tercantum di katalog (<strong>/paket 3 hr</strong>) sudah mencakup 3 hari pemakaian penuh:
+              </p>
+            </div>
+            <span class="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-[#556256] shadow-sm">
+              Gratis Dry-Clean &amp; Steam
+            </span>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="rounded-xl border border-[#DCE4DB] bg-white p-3.5">
+              <span class="text-[10px] font-semibold uppercase tracking-wider text-[#556256]">Hari 1 (H-1)</span>
+              <p class="mt-1 text-xs font-semibold text-[#2B2A28]">Pengambilan / Pengantaran</p>
+              <p class="mt-0.5 text-[11px] text-[#6B655E]">Ambil busana di butik atau terima via kurir dalam kondisi wangi &amp; rapi.</p>
+            </div>
+            <div class="rounded-xl border border-[#2B2A28] bg-[#2B2A28] p-3.5 text-white">
+              <span class="text-[10px] font-semibold uppercase tracking-wider text-[#D8DFD7]">Hari 2 (Hari-H)</span>
+              <p class="mt-1 text-xs font-semibold text-white">Hari Acara Wisuda / Pesta</p>
+              <p class="mt-0.5 text-[11px] text-[#E5DFD6]">Tampil anggun &amp; nyaman sepanjang acara tanpa khawatir biaya laundry.</p>
+            </div>
+            <div class="rounded-xl border border-[#DCE4DB] bg-white p-3.5">
+              <span class="text-[10px] font-semibold uppercase tracking-wider text-[#556256]">Hari 3 (H+1)</span>
+              <p class="mt-1 text-xs font-semibold text-[#2B2A28]">Pengembalian Busana</p>
+              <p class="mt-0.5 text-[11px] text-[#6B655E]">Kembalikan maksimal pukul 21.00 WIB (tanpa perlu dicuci) &amp; deposit cair 100%.</p>
+            </div>
+          </div>
+
+          <p class="mt-3 text-[11px] text-[#455146]">
+            <strong>Butuh lebih dari 3 hari?</strong> Pilih paket 4–5 hari atau tentukan rentang tanggal di kalender — biaya hari tambahan (hari ke-4 dst.) dihitung proporsional otomatis di kalkulator sebelum checkout.
+          </p>
         </div>
       </section>
 

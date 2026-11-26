@@ -97,7 +97,7 @@ const sortOptions: { value: SortOption, label: string }[] = [
     <div class="mt-6">
       <div class="flex items-center justify-between">
         <label for="sidebar-max-price" class="text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
-          Harga Maks / Hari
+          Harga Maks / Paket 3 Hr
         </label>
         <span class="text-xs font-semibold text-[#556256]">
           {{ filters.maxPrice >= sliderMax ? 'Semua' : formatRupiah(filters.maxPrice) }}

@@ -446,7 +446,7 @@ function printReceipt() {
 
             <div class="space-y-1.5 rounded-xl bg-[#FAF8F5] p-3.5">
               <div class="flex justify-between text-[#6B655E]">
-                <span>Biaya Sewa ({{ localBooking.durationDays }} hari &times; {{ formatRupiah(localBooking.pricePerDay) }})</span>
+                <span>Biaya Sewa (Paket {{ localBooking.durationDays }} hari)</span>
                 <span class="font-medium text-[#2B2A28]">{{ formatRupiah(localBooking.subtotal) }}</span>
               </div>
               <div class="flex justify-between text-[#6B655E]">

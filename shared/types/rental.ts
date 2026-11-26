@@ -279,8 +279,34 @@ export interface NotificationsListResponse {
 }
 
 export const DELIVERY_FEE_COURIER = 15000
+export const STANDARD_PACKAGE_DAYS = 3
 export const DRY_CLEAN_BUFFER_BEFORE_DAYS = 1
 export const DRY_CLEAN_BUFFER_AFTER_DAYS = 2
+
+export function getExtraDayRate(packagePrice: number): number {
+  const raw = Math.round(packagePrice / STANDARD_PACKAGE_DAYS / 5000) * 5000
+  return Math.max(15000, raw)
+}
+
+export function calculatePackagePricing(packagePrice: number, durationDays: number): {
+  basePackagePrice: number
+  extraDays: number
+  extraDayRate: number
+  extraTotal: number
+  subtotal: number
+} {
+  const safeDays = Math.max(1, durationDays)
+  const extraDays = Math.max(0, safeDays - STANDARD_PACKAGE_DAYS)
+  const extraDayRate = getExtraDayRate(packagePrice)
+  const extraTotal = extraDays * extraDayRate
+  return {
+    basePackagePrice: packagePrice,
+    extraDays,
+    extraDayRate,
+    extraTotal,
+    subtotal: packagePrice + extraTotal,
+  }
+}
 
 export function shiftIsoDate(isoDate: string, deltaDays: number): string {
   const parts = isoDate.split('-').map(Number)

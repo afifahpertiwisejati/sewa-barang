@@ -21,6 +21,7 @@ import {
   Wallet,
 } from 'lucide-vue-next'
 import {
+  calculatePackagePricing,
   DELIVERY_FEE_COURIER,
   DEPOSIT_REFUND_METHODS,
   DRY_CLEAN_BUFFER_AFTER_DAYS,
@@ -28,6 +29,7 @@ import {
   GUARANTEE_OPTIONS,
   PAYMENT_ACCOUNTS,
   shiftIsoDate,
+  STANDARD_PACKAGE_DAYS,
   type BookedDateRange,
   type BookingRecord,
   type DeliveryOption,
@@ -270,12 +272,19 @@ watch(endDate, () => {
 })
 
 const durationDays = computed(() => calculateDurationDays(startDate.value, endDate.value))
-const subtotal = computed(() => durationDays.value * props.item.pricePerDay)
+const packagePricing = computed(() => calculatePackagePricing(props.item.pricePerDay, durationDays.value))
+const subtotal = computed(() => packagePricing.value.subtotal)
 const deliveryFee = computed(() =>
   deliveryOption.value === 'kurir_antar' ? DELIVERY_FEE_COURIER : 0,
 )
 const rentalTotal = computed(() => subtotal.value + deliveryFee.value)
 const totalPrice = computed(() => rentalTotal.value + props.item.deposit)
+
+function applyDurationPackage(days: number) {
+  const baseStart = startDate.value && startDate.value >= todayIso ? startDate.value : getOffsetIsoDate(1)
+  startDate.value = baseStart
+  endDate.value = shiftIsoDate(baseStart, Math.max(1, days) - 1)
+}
 
 const dateValidationError = computed(() => {
   if (!startDate.value || !endDate.value) {
@@ -440,15 +449,18 @@ function handlePaid(updated: BookingRecord) {
     <div class="flex items-start justify-between gap-3 border-b border-[#EFECE7] pb-4">
       <div>
         <p class="text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
-          Harga Sewa
+          Harga Paket Sewa
         </p>
-        <div class="mt-0.5 flex items-baseline gap-1">
+        <div class="mt-0.5 flex items-baseline gap-1.5">
           <span class="font-serif text-2xl font-medium tracking-tight text-[#2B2A28]">
             {{ formatRupiah(props.item.pricePerDay) }}
           </span>
-          <span class="text-xs text-[#8A837A]">/hari</span>
+          <span class="text-xs font-medium text-[#556256]">/ paket {{ STANDARD_PACKAGE_DAYS }} hari</span>
         </div>
-        <p class="mt-1 text-[11px] text-[#6B655E]">
+        <p class="mt-1 text-[10.5px] text-[#6B655E]">
+          H-1 Ambil &bull; Hari-H Acara &bull; H+1 Kembali
+        </p>
+        <p class="mt-0.5 text-[11px] text-[#6B655E]">
           + Deposit Jaminan <strong class="text-[#2B2A28]">{{ formatRupiah(props.item.deposit) }}</strong>
           <span class="text-[#556256]"> (kembali 100%)</span>
         </p>
@@ -681,6 +693,44 @@ function handlePaid(updated: BookingRecord) {
         </div>
       </div>
 
+      <!-- Quick Rental Duration Package Presets -->
+      <div>
+        <div class="mb-2 flex items-center justify-between gap-2">
+          <span class="text-[11px] font-medium uppercase tracking-wider text-[#8A837A]">
+            Paket Durasi Sewa
+          </span>
+          <span class="text-[10.5px] font-medium text-[#556256]">
+            {{ durationDays <= STANDARD_PACKAGE_DAYS ? 'Paket Standar 3 Hari' : `Paket 3 Hr + ${packagePricing.extraDays} Hr` }}
+          </span>
+        </div>
+        <div class="grid grid-cols-3 gap-1.5">
+          <button
+            v-for="pkg in [
+              { days: 3, title: 'Paket 3 Hari', sub: 'H-1 · Acara · H+1' },
+              { days: 4, title: '4 Hari', sub: `+${formatRupiah(packagePricing.extraDayRate)}` },
+              { days: 5, title: '5 Hari', sub: `+${formatRupiah(packagePricing.extraDayRate * 2)}` },
+            ]"
+            :key="pkg.days"
+            type="button"
+            class="rounded-lg border px-2 py-2 text-left transition-all"
+            :class="
+              (pkg.days === 3 ? durationDays <= 3 : durationDays === pkg.days)
+                ? 'border-[#2B2A28] bg-[#2B2A28] text-white'
+                : 'border-[#E8E3DC] bg-[#FAF8F5] text-[#2B2A28] hover:border-[#556256]'
+            "
+            @click="applyDurationPackage(pkg.days)"
+          >
+            <span class="block text-[11px] font-semibold">{{ pkg.title }}</span>
+            <span
+              class="block truncate text-[9.5px]"
+              :class="(pkg.days === 3 ? durationDays <= 3 : durationDays === pkg.days) ? 'text-white/75' : 'text-[#8A837A]'"
+            >
+              {{ pkg.sub }}
+            </span>
+          </button>
+        </div>
+      </div>
+
       <!-- Interactive Availability Calendar (with disabled booked & dry-clean buffer dates) -->
       <AvailabilityCalendar
         v-model:start-date="startDate"
@@ -739,7 +789,12 @@ function handlePaid(updated: BookingRecord) {
               {{ formatRupiah(rentalTotal) }}
             </span>
             <span class="mt-0.5 block text-[10px] text-[#8A837A]">
-              {{ formatRupiah(props.item.pricePerDay) }} &times; {{ durationDays }} hr{{ deliveryFee > 0 ? ' + kurir' : '' }}
+              <template v-if="packagePricing.extraDays > 0">
+                Paket 3 hr + {{ packagePricing.extraDays }} hr{{ deliveryFee > 0 ? ' + kurir' : '' }}
+              </template>
+              <template v-else>
+                Paket 3 hari{{ deliveryFee > 0 ? ' + kurir' : ' (H-1, H, H+1)' }}
+              </template>
             </span>
           </div>
 
@@ -1110,8 +1165,12 @@ function handlePaid(updated: BookingRecord) {
             1. Total Biaya Sewa (Biaya Final)
           </p>
           <div class="flex items-center justify-between text-[#6B655E]">
-            <span>Harga Sewa ({{ formatRupiah(props.item.pricePerDay) }} &times; {{ durationDays }} hari)</span>
-            <span class="font-medium text-[#2B2A28]">{{ formatRupiah(subtotal) }}</span>
+            <span>Paket Standar {{ STANDARD_PACKAGE_DAYS }} Hari (H-1, Hari-H, H+1)</span>
+            <span class="font-medium text-[#2B2A28]">{{ formatRupiah(packagePricing.basePackagePrice) }}</span>
+          </div>
+          <div v-if="packagePricing.extraDays > 0" class="flex items-center justify-between text-[#6B655E]">
+            <span>Tambahan {{ packagePricing.extraDays }} hari ({{ packagePricing.extraDays }} &times; {{ formatRupiah(packagePricing.extraDayRate) }})</span>
+            <span class="font-medium text-[#2B2A28]">+ {{ formatRupiah(packagePricing.extraTotal) }}</span>
           </div>
           <div class="flex items-center justify-between text-[#6B655E]">
             <span class="inline-flex items-center gap-1">

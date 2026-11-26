@@ -186,7 +186,7 @@ function handleToggleLike() {
         <div class="mt-2.5 flex items-center justify-between border-t border-[#F3EFE9] pt-2.5">
           <div class="min-w-0">
             <p class="truncate text-[13px] font-semibold text-[#2B2A28] sm:text-[15px]">
-              {{ formatRupiah(props.item.pricePerDay) }}<span class="text-[10px] font-normal text-[#8A837A] sm:text-[11px]">/hari</span>
+              {{ formatRupiah(props.item.pricePerDay) }}<span class="text-[10px] font-normal text-[#8A837A] sm:text-[11px]">/paket 3 hr</span>
             </p>
           </div>
 

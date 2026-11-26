@@ -226,7 +226,7 @@ async function handleSubmit() {
     return
   }
   if (!form.pricePerDay || form.pricePerDay < 5000) {
-    formError.value = 'Harga sewa per hari minimal Rp5.000.'
+    formError.value = 'Harga paket sewa 3 hari minimal Rp5.000.'
     return
   }
   if (form.deposit < 0) {
@@ -421,7 +421,7 @@ async function handleSubmit() {
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label for="item-price" class="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-[#6B655E]">
-                Harga Sewa / Hari (Rp) <span class="text-rose-500">*</span>
+                Harga Paket 3 Hari (Rp) <span class="text-rose-500">*</span>
               </label>
               <input
                 id="item-price"
@@ -685,7 +685,7 @@ async function handleSubmit() {
               <div>
                 <p class="text-[15px] font-semibold text-[#2B2A28]">
                   {{ formatRupiah(Number(form.pricePerDay) || 0) }}
-                  <span class="text-[11px] font-normal text-[#8A837A]">/hari</span>
+                  <span class="text-[11px] font-normal text-[#8A837A]">/paket 3 hr</span>
                 </p>
                 <p class="text-[10px] text-[#8A837A]">
                   Deposit {{ formatRupiah(Number(form.deposit) || 0) }}

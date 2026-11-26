@@ -30,7 +30,8 @@ export function useFormatters() {
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0
     const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
     if (diff < 0) return 0
-    return diff === 0 ? 1 : diff
+    // Inclusive calendar days: e.g. 27 Nov – 29 Nov = 3 hari (H-1 ambil, Hari-H acara, H+1 kembali)
+    return diff + 1
   }
 
   const getOffsetIsoDate = (daysFromToday = 0): string => {

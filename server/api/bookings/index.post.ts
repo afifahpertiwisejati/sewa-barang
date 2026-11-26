@@ -1,4 +1,5 @@
 import {
+  calculatePackagePricing,
   DELIVERY_FEE_COURIER,
   DEPOSIT_REFUND_METHODS,
   DRY_CLEAN_BUFFER_AFTER_DAYS,
@@ -191,7 +192,7 @@ export default defineEventHandler(async (event): Promise<BookingRecord> => {
   }
 
   const durationDays = calculateRentalDays(startDate, endDate)
-  const subtotal = durationDays * item.pricePerDay
+  const { subtotal } = calculatePackagePricing(item.pricePerDay, durationDays)
   const deliveryFee = deliveryOption === 'kurir_antar' ? DELIVERY_FEE_COURIER : 0
   const totalPrice = subtotal + item.deposit + deliveryFee
 

@@ -69,6 +69,10 @@ const deductionItems = [
               <ul class="mt-2 space-y-1.5 text-[11.5px] leading-relaxed text-[#455146]">
                 <li class="flex items-start gap-1.5">
                   <CheckCircle2 class="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#556256]" />
+                  <span><strong>Skema Paket 3 Hari:</strong> Harga katalog mencakup 3 hari sewa (H-1 ambil, Hari-H acara, H+1 kembali). Hari tambahan di luar paket dihitung proporsional di kalkulator.</span>
+                </li>
+                <li class="flex items-start gap-1.5">
+                  <CheckCircle2 class="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#556256]" />
                   <span>Deposit keamanan dikembalikan 100% via Transfer Bank, E-Wallet, atau Tunai saat busana kembali utuh &amp; tepat waktu.</span>
                 </li>
                 <li class="flex items-start gap-1.5">
