@@ -51,9 +51,7 @@ async function handleLogout() {
     description: 'Anda telah keluar dari akun Seruni Atelier.',
     type: 'info',
   })
-  if (route.path.startsWith('/admin') || route.path.startsWith('/dashboard')) {
-    await router.push('/')
-  }
+  await router.push('/login')
 }
 </script>
 

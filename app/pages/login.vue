@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ArrowRight, Loader2, Lock, ShieldCheck, Sparkles } from 'lucide-vue-next'
 
+definePageMeta({
+  layout: 'auth',
+})
+
 useHead({
   title: 'Masuk & Daftar — Seruni Atelier',
 })
@@ -37,11 +41,11 @@ const registerForm = reactive({
 
 function getPostLoginTarget(role: 'user' | 'admin') {
   const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
-  if (redirect && redirect.startsWith('/')) {
-    if (redirect.startsWith('/admin') && role !== 'admin') return '/dashboard'
+  if (redirect && redirect.startsWith('/') && redirect !== '/login') {
+    if (redirect.startsWith('/admin') && role !== 'admin') return '/'
     return redirect
   }
-  return role === 'admin' ? '/admin' : '/dashboard'
+  return role === 'admin' ? '/admin' : '/'
 }
 
 onMounted(() => {
