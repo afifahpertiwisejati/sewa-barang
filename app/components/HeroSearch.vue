@@ -116,9 +116,18 @@ function handleStartDateChange() {
   if (filters.value.startDate && filters.value.endDate && filters.value.endDate < filters.value.startDate) {
     filters.value.endDate = filters.value.startDate
   }
+  if (filters.value.startDate && !filters.value.endDate) {
+    filters.value.endDate = filters.value.startDate
+  }
+  if (filters.value.startDate && filters.value.endDate) {
+    filters.value.availableOnly = true
+  }
 }
 
 function submitSearch() {
+  if (filters.value.startDate && filters.value.endDate) {
+    filters.value.availableOnly = true
+  }
   emit('search')
 }
 </script>

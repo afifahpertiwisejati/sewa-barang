@@ -25,10 +25,12 @@ const queryParams = computed(() => {
   if (filters.value.location.trim()) params.location = filters.value.location.trim()
   if (filters.value.category !== 'Semua') params.category = filters.value.category
   if (filters.value.maxPrice < DEFAULT_MAX_PRICE) params.maxPrice = filters.value.maxPrice
-  if (filters.value.availableOnly) params.availableOnly = 'true'
-  if (filters.value.startDate && filters.value.endDate) {
-    params.startDate = filters.value.startDate
-    params.endDate = filters.value.endDate
+  if (filters.value.availableOnly) {
+    params.availableOnly = 'true'
+    if (filters.value.startDate && filters.value.endDate) {
+      params.startDate = filters.value.startDate
+      params.endDate = filters.value.endDate
+    }
   }
   return params
 })

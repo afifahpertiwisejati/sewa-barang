@@ -1,6 +1,9 @@
-import type {
-  ItemsListResponse,
-  SortOption,
+import {
+  DRY_CLEAN_BUFFER_AFTER_DAYS,
+  DRY_CLEAN_BUFFER_BEFORE_DAYS,
+  shiftIsoDate,
+  type ItemsListResponse,
+  type SortOption,
 } from '#shared/types/rental'
 import { listActiveBookings, listAllItems, syncAllItemStatusesInDb } from '../../utils/db'
 import { datesOverlap } from '../../utils/store'
@@ -51,20 +54,46 @@ export default defineEventHandler(async (event): Promise<ItemsListResponse> => {
     filtered = filtered.filter(item => item.pricePerDay <= maxPrice)
   }
 
-  if (availableOnly) {
-    filtered = filtered.filter(item => item.status === 'Tersedia')
-  }
+  const hasDateRange = Boolean(startDate && endDate && endDate >= startDate)
 
-  if (startDate && endDate && endDate >= startDate) {
+  if (hasDateRange) {
+    // Scheduled rental availability: an item currently rented today is STILL bookable for future dates!
+    // Check if at least one (color x size) slot is free during [startDate, endDate] (respecting dry-clean buffer).
     filtered = filtered.filter((item) => {
-      const hasConflict = activeBookings.some(
-        b =>
-          b.itemId === item.id
-          && b.status === 'aktif'
-          && datesOverlap(startDate, endDate, b.startDate, b.endDate),
+      const itemBookings = activeBookings.filter(b => b.itemId === item.id && b.status === 'aktif')
+      if (itemBookings.length === 0) return true
+
+      const hasMultiColor = Boolean(item.colors && item.colors.length > 1)
+      const variants = hasMultiColor && item.colors
+        ? item.colors.map(c => ({
+            color: c.name,
+            sizes: Array.isArray(c.sizes) ? c.sizes : (item.sizes.length ? item.sizes : ['All Size']),
+          }))
+        : [{ color: '', sizes: item.sizes.length ? item.sizes : ['All Size'] }]
+
+      return variants.some(v =>
+        v.sizes.some((size) => {
+          const slotBlocked = itemBookings.some((b) => {
+            const bufferStart = shiftIsoDate(b.startDate, -DRY_CLEAN_BUFFER_BEFORE_DAYS)
+            const bufferEnd = shiftIsoDate(b.endDate, DRY_CLEAN_BUFFER_AFTER_DAYS)
+            if (!datesOverlap(startDate, endDate, bufferStart, bufferEnd)) return false
+
+            const sameSize = b.selectedSize.trim().toLowerCase() === size.trim().toLowerCase()
+            if (!sameSize) return false
+
+            if (hasMultiColor && v.color && b.selectedColor) {
+              return b.selectedColor.trim().toLowerCase() === v.color.trim().toLowerCase()
+            }
+            return true
+          })
+          return !slotBlocked
+        }),
       )
-      return !hasConflict
     })
+  }
+  else if (availableOnly) {
+    // Fallback only if user filtered without specifying a date range
+    filtered = filtered.filter(item => item.status === 'Tersedia')
   }
 
   switch (sort) {

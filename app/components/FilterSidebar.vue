@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUpDown, RotateCcw, Ruler, SlidersHorizontal } from 'lucide-vue-next'
+import { ArrowUpDown, CalendarDays, RotateCcw, Ruler, SlidersHorizontal } from 'lucide-vue-next'
 import type { SortOption } from '#shared/types/rental'
 import { DEFAULT_MAX_PRICE } from '../composables/useCatalogFilters'
 
@@ -10,7 +10,35 @@ const props = defineProps<{
 
 const { filters, hasActiveFilters, resetFilters } = useCatalogFilters()
 const { openSizeGuide } = useSizeGuide()
-const { formatRupiah } = useFormatters()
+const { formatRupiah, formatDateRange, getOffsetIsoDate } = useFormatters()
+const todayIso = getOffsetIsoDate(0)
+
+function handleAvailabilityToggle(event: Event) {
+  const checked = (event.target as HTMLInputElement).checked
+  filters.value.availableOnly = checked
+  if (checked && (!filters.value.startDate || !filters.value.endDate)) {
+    filters.value.startDate = getOffsetIsoDate(1)
+    filters.value.endDate = getOffsetIsoDate(3)
+  }
+}
+
+function handleSidebarStartDate() {
+  if (filters.value.startDate) {
+    if (!filters.value.endDate || filters.value.endDate < filters.value.startDate) {
+      filters.value.endDate = filters.value.startDate
+    }
+    filters.value.availableOnly = true
+  }
+}
+
+function handleSidebarEndDate() {
+  if (filters.value.startDate && filters.value.endDate) {
+    if (filters.value.endDate < filters.value.startDate) {
+      filters.value.endDate = filters.value.startDate
+    }
+    filters.value.availableOnly = true
+  }
+}
 
 const sliderMax = computed(() => Math.max(DEFAULT_MAX_PRICE, Math.ceil(props.maxCatalogPrice / 25000) * 25000))
 
@@ -110,19 +138,67 @@ const sortOptions: { value: SortOption, label: string }[] = [
       </div>
     </div>
 
-    <!-- Availability Toggle -->
+    <!-- Scheduled Availability Filter -->
     <div class="mt-6 border-t border-[#EFECE7] pt-5">
-      <label class="flex cursor-pointer items-center justify-between gap-3">
+      <label class="flex cursor-pointer items-start justify-between gap-3">
         <div>
-          <span class="block text-sm font-medium text-[#2B2A28]">Hanya yang Tersedia</span>
-          <span class="block text-xs text-[#8A837A]">Sembunyikan yang sedang disewa</span>
+          <span class="block text-sm font-medium text-[#2B2A28]">Tersedia di Tanggal Pilihan</span>
+          <span
+            v-if="filters.availableOnly && filters.startDate && filters.endDate"
+            class="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium text-[#556256]"
+          >
+            <CalendarDays class="h-3 w-3 shrink-0" />
+            {{ formatDateRange(filters.startDate, filters.endDate) }}
+          </span>
+          <span v-else class="mt-0.5 block text-xs text-[#8A837A]">
+            Mengikuti tanggal Mulai &amp; Selesai Sewa
+          </span>
         </div>
         <input
-          v-model="filters.availableOnly"
+          :checked="filters.availableOnly"
           type="checkbox"
-          class="h-4 w-4 rounded border-[#D9D2C8] text-[#556256] accent-[#556256] focus:ring-[#556256]"
+          class="mt-0.5 h-4 w-4 rounded border-[#D9D2C8] text-[#556256] accent-[#556256] focus:ring-[#556256]"
+          @change="handleAvailabilityToggle"
         >
       </label>
+
+      <!-- Synchronized Date Range Inputs -->
+      <div
+        v-if="filters.availableOnly || (filters.startDate && filters.endDate)"
+        class="mt-3 space-y-2 rounded-xl border border-[#EFECE7] bg-[#FAF8F5] p-3"
+      >
+        <div class="grid grid-cols-1 gap-2">
+          <div>
+            <label for="sidebar-start-date" class="mb-1 block text-[10px] font-medium uppercase tracking-wider text-[#8A837A]">
+              Mulai Sewa
+            </label>
+            <input
+              id="sidebar-start-date"
+              v-model="filters.startDate"
+              type="date"
+              :min="todayIso"
+              class="w-full rounded-lg border border-[#E8E3DC] bg-white px-2.5 py-1.5 text-xs font-medium text-[#2B2A28] focus:border-[#556256] focus:outline-none focus:ring-1 focus:ring-[#556256]"
+              @change="handleSidebarStartDate"
+            >
+          </div>
+          <div>
+            <label for="sidebar-end-date" class="mb-1 block text-[10px] font-medium uppercase tracking-wider text-[#8A837A]">
+              Selesai Sewa
+            </label>
+            <input
+              id="sidebar-end-date"
+              v-model="filters.endDate"
+              type="date"
+              :min="filters.startDate || todayIso"
+              class="w-full rounded-lg border border-[#E8E3DC] bg-white px-2.5 py-1.5 text-xs font-medium text-[#2B2A28] focus:border-[#556256] focus:outline-none focus:ring-1 focus:ring-[#556256]"
+              @change="handleSidebarEndDate"
+            >
+          </div>
+        </div>
+        <p class="text-[10.5px] leading-relaxed text-[#6B655E]">
+          Busana yang sedang dipakai hari ini tetap bisa dibooking untuk tanggal acara Anda berikutnya.
+        </p>
+      </div>
     </div>
 
     <!-- Size Guide Button -->
@@ -139,7 +215,7 @@ const sortOptions: { value: SortOption, label: string }[] = [
 
     <!-- Count -->
     <div class="mt-4 rounded-xl bg-[#FAF8F5] px-3.5 py-2.5 text-center text-xs text-[#6B655E]">
-      Menampilkan <span class="font-semibold text-[#2B2A28]">{{ props.totalResults }}</span> barang pilihan
+      Menampilkan <span class="font-semibold text-[#2B2A28]">{{ props.totalResults }}</span> koleksi pilihan
     </div>
   </aside>
 </template>
